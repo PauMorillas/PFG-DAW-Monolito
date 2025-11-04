@@ -1,0 +1,48 @@
+services:
+# Servicio de base de datos MySQL
+  mysql_db:
+    image: mysql:8.0
+    container_name: pfg_mysql_db
+    restart: always
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: gest_eventos
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD : ${DB_PASSWORD}
+    # Añadimos un healthcheck para asegurarnos de que la base de datos está lista antes de que la aplicación intente conectarse
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+      start_period: 10s
+    ports:
+    # Mapea el puerto del host al puerto del contenedor 
+      - "3306:3306"
+    volumes:
+      # Persistencia de datos (Usa el volumen 'db_data')
+      - db_data:/var/lib/mysql
+      # Inicialización de la BD (Mapea la carpeta local a la ruta de scripts de MySQL)
+      - ./db_init:/docker-entrypoint-initdb.d
+
+# Servicio de la aplicación Java Spring Boot
+  app:
+    build: . # Busca el DockerFile en el directorio actual
+    container_name: pfg_app
+    restart: on-failure
+    ports:
+      - "${SV_PORT}:${SV_PORT}" #Mapea el puerto del host al puerto del contenedor
+    depends_on:
+      - mysql_db # Asegura que el servicio de base de datos se inicie antes que la aplicación
+    environment:
+        - SPRING_DATASOURCE_URL=${DB_URL}
+        - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+        - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+        - SV_PORT=${SV_PORT}
+        - MAIL_USERNAME=${MAIL_USERNAME}
+        - MAIL_PASSWORD=${MAIL_PASSWORD}
+        - SPRING_PROFILES_ACTIVE=dev
+        - SV_PORT=${SV_PORT}
+
+volumes:
+  db_data: # Solo se nombra el volumen que necesita ser persistente

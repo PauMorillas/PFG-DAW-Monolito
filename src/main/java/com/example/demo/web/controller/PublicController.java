@@ -108,7 +108,7 @@ public class PublicController {
 
 	@GetMapping("/demo")
 	public ModelAndView showDemo() {
-		ModelAndView mav = new ModelAndView("/demo");
+		ModelAndView mav = new ModelAndView("demo");
 		return mav;
 	}
 }
