@@ -5,4 +5,6 @@ import com.example.demo.model.dto.ReservaRequestDTO;
 
 public interface ClienteService {
 	ClienteDTO findOrCreate(ReservaRequestDTO request);
+
+	boolean guardarCliente(ClienteDTO clienteDTO);
 }

@@ -30,6 +30,9 @@ public class Cliente {
 	@Column(unique = true, nullable = false)
 	private String telf;
 
+	@Column(name= "pass_hash", nullable = false)
+	private String pass;
+
 	// Relación 1:N con Reserva. Un Cliente puede hacer muchas Reservas.
 	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Reserva> listaReservas;

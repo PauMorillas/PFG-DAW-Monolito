@@ -15,8 +15,9 @@ public class ClienteDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private Long id;
 	private String nombre;
-	private String correoElec;
+	private String email;
 	private String telf;
+	private String pass;
 	private List<ReservaDTO> listaReservasDTO;
 
 	public ClienteDTO() {
@@ -44,7 +45,7 @@ public class ClienteDTO implements Serializable {
 		ClienteDTO cliDTO = new ClienteDTO();
 		cliDTO.setId(cliente.getId());
 		cliDTO.setNombre(cliente.getNombre());
-		cliDTO.setCorreoElec(cliente.getCorreoElec());
+		cliDTO.setEmail(cliente.getCorreoElec());
 		cliDTO.setTelf(cliente.getTelf());
 
 		return cliDTO;
@@ -54,8 +55,9 @@ public class ClienteDTO implements Serializable {
 		Cliente cliente = new Cliente();
 		cliente.setId(clienteDTO.getId());
 		cliente.setNombre(clienteDTO.getNombre());
-		cliente.setCorreoElec(clienteDTO.getCorreoElec());
+		cliente.setCorreoElec(clienteDTO.getEmail());
 		cliente.setTelf(clienteDTO.getTelf());
+		cliente.setPass(cliente.getPass());
 
 		return cliente;
 	}

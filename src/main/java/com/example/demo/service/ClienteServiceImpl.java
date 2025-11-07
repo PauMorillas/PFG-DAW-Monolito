@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.model.dto.ClienteDTO;
@@ -12,8 +13,15 @@ import com.example.demo.repository.entity.Cliente;
 
 @Service
 public class ClienteServiceImpl implements ClienteService {
+
 	@Autowired
 	private ClienteRepository clienteRepository;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	ClienteServiceImpl(PasswordEncoder passwordEncoder) {
+		this.passwordEncoder = passwordEncoder;
+	}
 
 	/**
 	 * Busca un cliente existente por email. Si no existe, lo crea y lo guarda. Se
@@ -41,5 +49,15 @@ public class ClienteServiceImpl implements ClienteService {
 
 		// 3. Guardamos el nuevo cliente y lo devolvemos
 		return ClienteDTO.convertToDTO(clienteRepository.save(cliNuevo));
+	}
+
+	@Override
+	public boolean guardarCliente(ClienteDTO clienteDTO) {
+
+		// Hasheamos la contraseña y convertimos a entidad
+		Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
+		cliente.setPass(passwordEncoder.encode(cliente.getPass()));
+
+		return clienteRepository.save(cliente) != null;
 	}
 }

@@ -37,6 +37,7 @@ CREATE TABLE cliente(
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     correo_elec VARCHAR(100), -- No es único aquí, ya que dos negocios pueden tener clientes con el mismo email.
+    pass_hash VARCHAR(125),
     telf CHAR(9)
 );
 
@@ -101,4 +102,4 @@ CREATE TABLE pre_reserva (
         -- La reserva debe eliminarse si el servicio se borra
         ON DELETE CASCADE
         ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+);
