@@ -45,6 +45,8 @@ public class PreReserva {
 	@Column(nullable = false)
 	private String correoElec;
 	private String telf;
+	@Column(name = "pass_hash")
+	private String pass;
 
 	public PreReserva() {
 

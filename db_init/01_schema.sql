@@ -14,16 +14,6 @@ CREATE TABLE gerente(
 );
 
 -- ====================================================================
--- TABLA CLIENTE_FINAL (Clientes de nuestros clientes - NO inician sesión)
--- ====================================================================
-CREATE TABLE cliente(
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
-    correo_elec VARCHAR(100), -- No es único aquí, ya que dos negocios pueden tener clientes con el mismo email.
-    telf CHAR(9)
-);
-
--- ====================================================================
 -- TABLA NEGOCIO (La Tienda o Empresa física)
 -- ====================================================================
 CREATE TABLE negocio(
@@ -38,6 +28,16 @@ CREATE TABLE negocio(
     
     CONSTRAINT FK_UsuarioNegocio FOREIGN KEY (id_gerente)
     REFERENCES gerente(id)
+);
+
+-- ====================================================================
+-- TABLA CLIENTE (Clientes de nuestros clientes - NO inician sesión)
+-- ====================================================================
+CREATE TABLE cliente(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    correo_elec VARCHAR(100), -- No es único aquí, ya que dos negocios pueden tener clientes con el mismo email.
+    telf CHAR(9)
 );
 
 -- ====================================================================
@@ -80,7 +80,7 @@ CREATE TABLE reserva(
 -- ====================================================================
 -- TABLA PRE_RESERVA (Entidad encargada de gestionar la info de una reserva antes de ser confirmada)
 -- ====================================================================
-CREATE TABLE `pre_reserva` (
+CREATE TABLE pre_reserva (
     id INT NOT NULL AUTO_INCREMENT,
     token VARCHAR(255) NOT NULL UNIQUE,
     fecha_expiracion DATETIME NOT NULL,
@@ -90,13 +90,14 @@ CREATE TABLE `pre_reserva` (
     nombre_cliente VARCHAR(255) NOT NULL,
     correo_elec VARCHAR(255) NOT NULL,
     telf CHAR(9),
+    pass_hash VARCHAR(125), -- Para almacenar el hash de la contraseña
     
-    PRIMARY KEY (`id`),
+    PRIMARY KEY (id),
 
     -- DEFINICIÓN DE LA CLAVE FORÁNEA (OBLIGATORIA)
-    CONSTRAINT `FK_PreReservaServicio` 
-        FOREIGN KEY (`id_servicio`) 
-        REFERENCES `servicio` (`id`)
+    CONSTRAINT FK_PreReservaServicio 
+        FOREIGN KEY (id_servicio) 
+        REFERENCES servicio(id)
         -- La reserva debe eliminarse si el servicio se borra
         ON DELETE CASCADE
         ON UPDATE CASCADE

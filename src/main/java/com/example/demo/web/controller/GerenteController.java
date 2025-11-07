@@ -29,7 +29,7 @@ public class GerenteController {
 	// informacion del formulario
 	@GetMapping("/register")
 	public ModelAndView register() {
-		ModelAndView mav = new ModelAndView("/public/register");
+		ModelAndView mav = new ModelAndView("public/register");
 		mav.addObject("gerenteDTO", new GerenteDTO());
 		return mav;
 	}

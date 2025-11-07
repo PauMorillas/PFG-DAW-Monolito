@@ -18,8 +18,9 @@ public class ReservaRequestDTO implements Serializable {
 	// Clave de la Reserva (Usamos solo el ID)
 	private Long idServicio;
 
-	// Datos del Cliente (se usan para el "Upsert")
+	// Datos del Cliente (se usan para el Upsert)
 	private String nombreCliente;
 	private String correoElec;
 	private String telf;
+	private String pass;
 }

@@ -10,6 +10,8 @@ services:
       MYSQL_DATABASE: gest_eventos
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD : ${DB_PASSWORD}
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
     # Añadimos un healthcheck para asegurarnos de que la base de datos está lista antes de que la aplicación intente conectarse
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -24,6 +26,8 @@ services:
       - db_data:/var/lib/mysql
       # Inicialización de la BD (Mapea la carpeta local a la ruta de scripts de MySQL)
       - ./db_init:/docker-entrypoint-initdb.d
+      # Configuración de MySQL
+      - ./db_init/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
 
 # Servicio de la aplicación Java Spring Boot
   app:
@@ -31,7 +35,7 @@ services:
     container_name: pfg_app
     restart: on-failure
     ports:
-      - "${SV_PORT}:${SV_PORT}" #Mapea el puerto del host al puerto del contenedor
+      - "8081:${SV_PORT}" #Mapea el puerto del host al puerto del contenedor
     depends_on:
       - mysql_db # Asegura que el servicio de base de datos se inicie antes que la aplicación
     environment:

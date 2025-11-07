@@ -8,7 +8,7 @@
   const config = {
     // Obtiene el serviceId del atributo data-service-id del script, default a '1' si no existe
     serviceId: document.currentScript.getAttribute("data-service-id") || "1",
-    baseUrl: "http://localhost:8080", // TODO: Cambiar a URL de Producción
+    baseUrl: "http://localhost:8081", // TODO: Cambiar a URL de Producción
     modalId: "embedbook-modal",
     buttonId: "embedbook-floating-btn",
     iframeHeightOffset: 25, // Espacio para el botón de cerrar en px

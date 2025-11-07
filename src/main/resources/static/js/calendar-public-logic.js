@@ -177,64 +177,14 @@ async function loadCalendarConfiguration() {
  * @returns {Promise<object|null>} Promesa que resuelve a los datos del cliente o null si cancela.
  */
 async function getClientDataFromForm(startStr, endStr) {
-  // Formatear las fechas para mostrarlas en el título/texto del modal (Mejor UX)
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  };
-  const startDate = new Date(startStr);
-  const endDate = new Date(endStr);
+  // 1. Formatear las fechas
+  const { formattedStart, formattedEnd } = formatSlotTimes(startStr, endStr);
 
-  const formattedStart = startDate.toLocaleString("es-ES", options);
-  const formattedEnd = endDate.toLocaleTimeString("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // 2. Mostrar el formulario y esperar los datos
+  const clientData = await showClientForm(formattedStart, formattedEnd);
 
-  const { value: formValues } = await Swal.fire({
-    title: "Confirma tu Reserva",
-    html: `
-            <p class="mb-3">Has seleccionado un turno:<br>
-            de ${formattedStart} a ${formattedEnd}.</p>
-            <hr>
-            <input id="swal-input1" class="swal2-input" placeholder="Nombre Completo" required>
-            <input id="swal-input2" class="swal2-input" placeholder="Correo Electrónico" type="email" required>
-            <input id="swal-input3" class="swal2-input" placeholder="Teléfono (Opcional)" type="tel">
-        `,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "Confirmar Cita",
-    cancelButtonText: "Cancelar",
-    preConfirm: () => {
-      const nombre = document.getElementById("swal-input1").value;
-      const email = document.getElementById("swal-input2").value;
-
-      // Validación básica para campos requeridos
-      if (!nombre || !email) {
-        Swal.showValidationMessage("Por favor, rellena tu nombre y email.");
-        return false;
-      }
-
-      // Retornamos los valores del formulario
-      return {
-        nombreCliente: nombre,
-        correoElec: email,
-        telf: document.getElementById("swal-input3").value,
-      };
-    },
-  });
-
-  // Si el usuario confirma y los datos son válidos, devolvemos los valores
-  if (formValues) {
-    return formValues;
-  }
-
-  // Si cancela o cierra el modal, devolvemos null
-  return null;
+  // 3. Devolver los datos o null si se cancela
+  return clientData;
 }
 
 /**
@@ -307,6 +257,77 @@ async function sendPreReservaRequest(idServicio, startStr, endStr) {
       showConfirmButton: false,
     });
   }
+}
+
+/**
+ * [HELPER] Formatea las fechas de inicio y fin para mejorar la UX del modal.
+ * @param {string} startStr - Fecha y hora de inicio del slot.
+ * @param {string} endStr - Fecha y hora de fin del slot.
+ * @returns {object} Un objeto con las fechas formateadas.
+ */
+function formatSlotTimes(startStr, endStr) {
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  const startDate = new Date(startStr);
+  const endDate = new Date(endStr);
+
+  const formattedStart = startDate.toLocaleString("es-ES", options);
+  const formattedEnd = endDate.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return { formattedStart, formattedEnd };
+}
+
+/**
+ * [MODAL] Muestra el modal de SweetAlert2 y gestiona la validación interna.
+ * @param {string} formattedStart - Hora de inicio formateada.
+ * @param {string} formattedEnd - Hora de fin formateada.
+ * @returns {Promise<object|null>} Promesa que resuelve a los datos del cliente o null si cancela.
+ */
+async function showClientForm(formattedStart, formattedEnd) {
+  const { value: formValues } = await Swal.fire({
+    title: "Confirma tu Reserva",
+    html: `
+            <p class="mb-3">Has seleccionado un turno:<br>
+            de ${formattedStart} a ${formattedEnd}.</p>
+            <hr>
+            <input id="swal-input1" class="swal2-input" placeholder="Nombre Completo" required>
+            <input id="swal-input2" class="swal2-input" placeholder="Correo Electrónico" type="email" required>
+            <input id="swal-input3" class="swal2-input" placeholder="Teléfono (Opcional)" type="tel">
+        `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: "Confirmar Cita",
+    cancelButtonText: "Cancelar",
+    preConfirm: () => {
+      const nombre = document.getElementById("swal-input1").value;
+      const email = document.getElementById("swal-input2").value;
+
+      // Validación básica para campos requeridos
+      if (!nombre || !email) {
+        Swal.showValidationMessage("Por favor, rellena tu nombre y email.");
+        return false;
+      }
+
+      // Retornamos los valores del formulario
+      return {
+        nombreCliente: nombre,
+        correoElec: email,
+        telf: document.getElementById("swal-input3").value,
+      };
+    },
+  });
+
+  // Devolvemos el resultado directo de SweetAlert2
+  return formValues || null;
 }
 
 // Aseguramos que el proceso de carga y inicialización comience cuando el DOM esté listo
