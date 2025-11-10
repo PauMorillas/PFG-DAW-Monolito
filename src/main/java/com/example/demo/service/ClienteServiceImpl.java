@@ -6,22 +6,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.exception.ClienteValidationException;
+import lombok.extern.slf4j.Slf4j;
 import com.example.demo.model.dto.ClienteDTO;
 import com.example.demo.model.dto.ReservaRequestDTO;
 import com.example.demo.repository.dao.ClienteRepository;
 import com.example.demo.repository.entity.Cliente;
 
 @Service
+@Slf4j
 public class ClienteServiceImpl implements ClienteService {
 
 	@Autowired
 	private ClienteRepository clienteRepository;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-
-	ClienteServiceImpl(PasswordEncoder passwordEncoder) {
-		this.passwordEncoder = passwordEncoder;
-	}
 
 	/**
 	 * Busca un cliente existente por email. Si no existe, lo crea y lo guarda. Se
@@ -34,7 +33,7 @@ public class ClienteServiceImpl implements ClienteService {
 	public ClienteDTO findOrCreate(ReservaRequestDTO request) {
 
 		// 1. Intentar buscar por correo electrónico
-		Optional<Cliente> cliExistente = clienteRepository.findByCorreoElec(request.getCorreoElec());
+		Optional<Cliente> cliExistente = clienteRepository.findByEmail(request.getCorreoElec());
 
 		if (cliExistente.isPresent()) {
 			// Cliente encontrado, lo devolvemos para usarlo en la Reserva.
@@ -44,7 +43,7 @@ public class ClienteServiceImpl implements ClienteService {
 		// 2. Cliente no encontrado, creamos uno nuevo
 		Cliente cliNuevo = new Cliente();
 		cliNuevo.setNombre(request.getNombreCliente());
-		cliNuevo.setCorreoElec(request.getCorreoElec());
+		cliNuevo.setEmail(request.getCorreoElec());
 		cliNuevo.setTelf(request.getTelf());
 
 		// 3. Guardamos el nuevo cliente y lo devolvemos
@@ -52,12 +51,66 @@ public class ClienteServiceImpl implements ClienteService {
 	}
 
 	@Override
-	public boolean guardarCliente(ClienteDTO clienteDTO) {
+	public void guardarCliente(ClienteDTO clienteDTO) {
+		try {
+			log.info("Iniciando registro de cliente: {}", clienteDTO.getEmail());
+			validarCliente(clienteDTO);
+			
+			// Si pasa las validaciones sin lanzar excepción, procedemos a guardar
+			Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
+			cliente.setPass(passwordEncoder.encode(clienteDTO.getPass()));
+			clienteRepository.save(cliente);
+			log.info("Cliente registrado correctamente: {}", clienteDTO.getEmail());
+			
+		} catch (ClienteValidationException e) {
+			log.error("Error de validación al registrar cliente: {}", e.getMessage());
+			throw e; // Propagamos la excepción para que el controlador la maneje
+		} catch (Exception e) {
+			log.error("Error inesperado al guardar el cliente: {}", e.getMessage(), e);
+			throw new ClienteValidationException("Error inesperado al guardar el cliente: " + e.getMessage());
+		}
+	}
 
-		// Hasheamos la contraseña y convertimos a entidad
-		Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
-		cliente.setPass(passwordEncoder.encode(cliente.getPass()));
+	private void validarCliente(ClienteDTO clienteDTO) {
+		StringBuilder errores = new StringBuilder();
 
-		return clienteRepository.save(cliente) != null;
+		// 1. Validación de nulidad del DTO
+		if (clienteDTO == null) {
+			throw new ClienteValidationException("Los datos del cliente no pueden ser nulos");
+		}
+
+		// 2. Validación de campos obligatorios
+		if (isEmptyOrNull(clienteDTO.getNombre())) {
+			errores.append("El nombre es obligatorio. ");
+		}
+		if (isEmptyOrNull(clienteDTO.getEmail())) {
+			errores.append("El correo electrónico es obligatorio. ");
+		}
+		if (isEmptyOrNull(clienteDTO.getPass())) {
+			errores.append("La contraseña es obligatoria. ");
+		}
+
+		// 3. Validación de formato de correo electrónico
+		if (!isEmptyOrNull(clienteDTO.getEmail()) && !clienteDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+			errores.append("El formato del correo electrónico no es válido. ");
+		}
+
+		// 4. Validación de formato de teléfono (9 dígitos) - Solo si se proporciona
+		if (!isEmptyOrNull(clienteDTO.getTelf()) && !clienteDTO.getTelf().matches("\\d{9}")) {
+			errores.append("Si proporciona un teléfono, debe tener 9 dígitos. ");
+		}		// 5. Validación de correo electrónico único
+		if (!isEmptyOrNull(clienteDTO.getEmail()) && 
+			clienteRepository.findByEmail(clienteDTO.getEmail()).isPresent()) {
+			errores.append("El correo electrónico ya está registrado. ");
+		}
+
+		// Si hay errores, lanzamos la excepción con todos los mensajes
+		if (errores.length() > 0) {
+			throw new ClienteValidationException(errores.toString().trim());
+		}
+	}
+
+	private boolean isEmptyOrNull(String str) {
+		return str == null || str.trim().isEmpty();
 	}
 }

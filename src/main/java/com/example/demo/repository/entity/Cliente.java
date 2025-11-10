@@ -25,9 +25,9 @@ public class Cliente {
 	private String nombre;
 
 	@Column(name = "correo_elec", unique = true, nullable = false)
-	private String correoElec;
+	private String email;
 
-	@Column(unique = true, nullable = false)
+	@Column(unique = true, nullable = true)
 	private String telf;
 
 	@Column(name= "pass_hash", nullable = false)

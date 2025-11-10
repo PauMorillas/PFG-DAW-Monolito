@@ -10,6 +10,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
 
 import com.example.demo.repository.dao.DominioRepository;
 
@@ -26,51 +30,55 @@ public class SecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(Arrays.asList("*"));
+		configuration.setAllowCredentials(true);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/api/**", configuration);
+		return source;
+	}
+
 	// 3. Define la cadena de filtros de seguridad (Autorización)
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors() // Usará automáticamente el CorsConfigurationSource del CorsConfig
+            .and()
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.disable())
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives(buildCspPolicy())))
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(
+                    "/api/clientes/registro",
+                    "/public/**",
+                    "/register",
+                    "/public/api/calendario/**",
+                    "/public/reservas/confirmar/",
+                    "/mail/**",
+                    "/css/**",
+                    "/js/**",
+                    "/login",
+                    "/error",
+                    "/favicon.ico"
+                ).permitAll()
+                .requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
+                .anyRequest().authenticated())
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/home", true)
+                .permitAll())
+            .logout(logout -> logout.permitAll())
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
 
-				.headers(headers -> headers
-						// a) Deshabilitar X-Frame-Options (para que no interfiera con CSP)
-						.frameOptions(frameOptions -> frameOptions.disable())
-
-						// b) Aplicar Content-Security-Policy (CSP)
-						.contentSecurityPolicy(csp -> csp
-								// El método .policy() toma directamente el String de la política
-								.policyDirectives(buildCspPolicy())))
-				// Autorización de peticiones
-				.authorizeHttpRequests(authorize -> authorize
-
-						// 1. Rutas públicas sin autenticación (deben ir primero)
-						// Incluye: Confirmación de reservas, registro, API de calendario,
-						// manejo de errores de Spring y archivos estáticos.
-						.requestMatchers("/public/**", "/register", "/public/api/calendario/**",
-								"/public/reservas/confirmar/", "/mail/**", "/css/**",
-								"/js/**", "/login", "/error", // <-- Necesario para evitar bucles de seguridad
-								"/favicon.ico" // <-- Necesario para archivos de navegación
-						).permitAll()
-
-						// 2. Ruta protegida para el dashboard de gestión (gerentes)
-						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
-
-						// 3. Permisos generales: cualquier otra petición requiere autenticación
-						.anyRequest().authenticated())
-
-				// Configuración del formulario de login
-				.formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/home", true) // Redirecciona al home
-																								// después del login
-																								// exitoso
-						.permitAll())
-
-				// Configuración de cierre de sesión
-				.logout(logout -> logout.permitAll())
-
-				// TODO: Deshabilitar CSRF para rutas específicas (como /mail/** y /public/**)
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/mail/**", "/public/**"));
-
-		return http.build();
-	}
+        return http.build();
+    }
 
 	// Método que genera la política CSP dinámicamente o estáticamente
 	// TODO: El método buildCspPolicy debe ser modificado para usar el
@@ -97,16 +105,16 @@ public class SecurityConfig {
 		String frameAncestorsDirective = "frame-ancestors " + finalDomains + " *;";
 		// Nota: mantenemos * para la demo
 		// si la lista es vacía
-        
+
 		// Resto de las directivas CSP
-        String defaultSources = "default-src 'self';";
+		String defaultSources = "default-src 'self';";
 		String styleSources = "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;";
 		String scriptSources = "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;";
 		String fontSources = "font-src 'self' https://cdn.jsdelivr.net data:;";
 
-        return frameAncestorsDirective +
-               defaultSources +
-               styleSources +
+		return frameAncestorsDirective +
+				defaultSources +
+				styleSources +
 				scriptSources + fontSources;
 	}
 }

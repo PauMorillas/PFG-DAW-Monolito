@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Objects;
 
 import com.example.demo.repository.entity.Cliente;
-
 import lombok.Data;
 
 @Data
@@ -45,8 +44,10 @@ public class ClienteDTO implements Serializable {
 		ClienteDTO cliDTO = new ClienteDTO();
 		cliDTO.setId(cliente.getId());
 		cliDTO.setNombre(cliente.getNombre());
-		cliDTO.setEmail(cliente.getCorreoElec());
+		cliDTO.setEmail(cliente.getEmail());
 		cliDTO.setTelf(cliente.getTelf());
+		cliDTO.setPass(cliente.getPass());
+		cliDTO.setPass(cliente.getPass());
 
 		return cliDTO;
 	}
@@ -55,9 +56,9 @@ public class ClienteDTO implements Serializable {
 		Cliente cliente = new Cliente();
 		cliente.setId(clienteDTO.getId());
 		cliente.setNombre(clienteDTO.getNombre());
-		cliente.setCorreoElec(clienteDTO.getEmail());
+		cliente.setEmail(clienteDTO.getEmail());
 		cliente.setTelf(clienteDTO.getTelf());
-		cliente.setPass(cliente.getPass());
+		cliente.setPass(clienteDTO.getPass());
 
 		return cliente;
 	}
