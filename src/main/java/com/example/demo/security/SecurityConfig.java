@@ -3,6 +3,7 @@ package com.example.demo.security;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,26 +11,42 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.Arrays;
 
-import com.example.demo.repository.dao.DominioRepository;
+import com.example.demo.service.DominioService;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-	// 1. INYECTAR EL REPOSITORIO DE DOMINIOS
-	@Autowired(required = false) // Usamos required=false por si no está implementado al inicio
-	private DominioRepository dominioRepository;
 
+	@Value("${api.token}")
+    private String apiToken;
+
+	@Autowired()
+	private DominioService dominioService;
+	
+	@Bean
+    public RestTemplate restTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getInterceptors().add((request, body, execution) -> {
+            request.getHeaders().add("Authorization", "Bearer " + apiToken);
+            return execution.execute(request, body);
+        });
+        return restTemplate;
+    }
+	
 	// 1. Define el encriptador de contraseñas
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
+	// 2. Define la configuración CORS
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
@@ -82,7 +99,7 @@ public class SecurityConfig {
 
 	// Método que genera la política CSP dinámicamente o estáticamente
 	// TODO: El método buildCspPolicy debe ser modificado para usar el
-	// dominioRepository
+	// dominioService
 	private String buildCspPolicy() {
 
 		// --- LÓGICA DE PRODUCCIÓN REAL (para tu MEMORIA FINAL) ---
@@ -90,15 +107,15 @@ public class SecurityConfig {
 		String allowedDomainsString = "";
 
 		// Solo intentamos consultar si el repositorio ha sido inyectado
-		if (dominioRepository != null) {
+		if (dominioService != null) {
 			// Consulta la BBDD para obtener los dominios registrados por los gerentes
-			List<String> allowedDomains = dominioRepository.findAllDomains();
+			List<String> allowedDomains = dominioService.findAll();
 			// Crea un String separando los dominios por espacio
 			allowedDomainsString = String.join(" ", allowedDomains);
 		}
 
 		// En caso de fallar la consulta, usamos 'self' para evitar errores de seguridad
-		String finalDomains = (allowedDomainsString.isEmpty() || dominioRepository == null) ? "'self'"
+		String finalDomains = (allowedDomainsString.isEmpty() || dominioService == null) ? "'self'"
 				: "'self' " + allowedDomainsString;
 
 		// La directiva frame-ancestors debe incluir 'self' MÁS los dominios de clientes
