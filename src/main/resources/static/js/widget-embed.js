@@ -151,33 +151,45 @@
             max-height: 650px;
             position: relative;
             overflow-y: hidden;
-            //TODO: ARREGLAR LA BARRA Y EL BOTON DE CANCELAR
         }
 
-        /* Botón de cerrar */
-        .embedbook-close-btn {
-            color: #aaa;
-            /* Eliminamos float: right */
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            position: absolute;
-            /* Nuevas coordenadas para estar fuera del área de scroll vertical */
-            right: 5px; 
-            top: 0px;
-            
-            /* Propiedades para asegurar visibilidad */
-            z-index: 1003; /* Máximo z-index para estar siempre visible */
-            background: #fefefe; /* Fondo para evitar que el scroll pase por debajo */
-            border-radius: 50%;
-            padding: 0 5px; /* Espacio mínimo alrededor de la 'x' */
-        }
-        
-        .embedbook-close-btn:hover,
-        .embedbook-close-btn:focus {
-            color: black;
-            text-decoration: none;
-        }
+    /* Botón de cerrar: usar caja cuadrada y centrar la X con flexbox
+       - display: inline-flex para centrar el contenido horizontal/verticalmente
+       - box-sizing: border-box para que padding/border no cambien el ancho/alto declarados
+       - line-height: 1 y padding:0 para evitar distorsiones con la tipografía
+    */
+    .embedbook-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.563rem; /* ancho fijo */
+      height: 1.563rem; /* alto fijo */
+      box-sizing: border-box;
+      color: #555;
+      font-size: 0.75rem; /* tamaño de la 'x' */
+      line-height: 1;
+      font-weight: 600;
+      cursor: pointer;
+      position: absolute;
+      /* Ajusta la posición respecto al contenedor*/
+      right: 20px;
+      top: 8px;
+      z-index: 1003;
+      background: #fefefe;
+      border-radius: 50%;
+      padding: 0;
+      border: 1px solid rgba(0,0,0,0.08);
+      /* Evitar que el icono se mueva en dispositivos con subpixel rounding */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .embedbook-close-btn:hover,
+    .embedbook-close-btn:focus {
+      color: #fff;
+      background: transparent;
+      text-decoration: none;
+    }
     `;
     document.head.appendChild(style);
   }
