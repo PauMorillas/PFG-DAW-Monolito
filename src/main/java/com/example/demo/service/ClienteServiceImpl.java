@@ -98,7 +98,18 @@ public class ClienteServiceImpl implements ClienteService {
 		// 4. Validación de formato de teléfono (9 dígitos) - Solo si se proporciona
 		if (!isEmptyOrNull(clienteDTO.getTelf()) && !clienteDTO.getTelf().matches("\\d{9}")) {
 			errores.append("Si proporciona un teléfono, debe tener 9 dígitos. ");
-		}		// 5. Validación de correo electrónico único
+		}
+		// 5. Validación de contraseña: seguir misma regla que en Angular
+		// Mínimo 8 caracteres, al menos una letra y un número
+		if (!isEmptyOrNull(clienteDTO.getPass())) {
+			String pass = clienteDTO.getPass();
+			String passRegex = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$";
+			if (!pass.matches(passRegex)) {
+				errores.append("La contraseña debe tener al menos 8 caracteres, incluir al menos una letra y un número. ");
+			}
+		}
+
+		// 6. Validación de correo electrónico único
 		if (!isEmptyOrNull(clienteDTO.getEmail()) && 
 			clienteRepository.findByEmail(clienteDTO.getEmail()).isPresent()) {
 			errores.append("El correo electrónico ya está registrado. ");
