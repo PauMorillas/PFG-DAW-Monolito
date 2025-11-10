@@ -74,25 +74,33 @@ INSERT INTO cliente (nombre, correo_elec, telf) VALUES
 -- Servicio 4 (Cambio de Aceite, 60min)
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
 ('2025-11-10 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', 1, 4), -- Cliente Marta, 09:00 - 10:00
-('2025-11-10 10:30:00', '2025-11-10 11:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 10:30 - 11:30
+('2025-11-10 10:30:00', '2025-10-10 11:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 10:30 - 11:30
+
+---
 
 -- Martes 11/11/2025
 -- Servicio 5 (Revisión Pre-ITV, 120min)
-INSERT INTO reserva (fecha_inicio, estado, id_cliente, id_servicio) VALUES
-('2025-11-11 15:00:00', 'ACTIVA', 3, 5); -- Cliente Sofía, 15:00 - 17:00 (Ocupa las últimas 2h)
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-11 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', 3, 5); -- Cliente Sofía, 15:00 - 17:00 (Ocupa las últimas 2h)
+
+---
 
 -- Miércoles 12/11/2025
 -- Servicio 4 (Cambio de Aceite, 60min)
-INSERT INTO reserva (fecha_inicio, estado, id_cliente, id_servicio) VALUES
-('2025-11-12 11:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 11:30 - 12:30
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-12 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 11:30 - 12:30
+
+---
 
 -- Jueves 13/11/2025
 -- Servicio 5 (Revisión Pre-ITV, 120min) - Estado 'PENDIENTE' para variar
-INSERT INTO reserva (fecha_inicio, estado, id_cliente, id_servicio) VALUES
-('2025-11-13 08:30:00', 'PENDIENTE', 1, 5); -- Cliente Marta, 08:30 - 10:30
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'PENDIENTE', 1, 5); -- Cliente Marta, 08:30 - 10:30
+
+---
 
 -- Viernes 14/11/2025
 -- Servicio 4 (Cambio de Aceite, 60min)
-INSERT INTO reserva (fecha_inicio, estado, id_cliente, id_servicio) VALUES
-('2025-11-14 10:00:00', 'ACTIVA', 3, 4), -- Cliente Sofía, 10:00 - 11:00
-('2025-11-14 16:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 16:30 - 17:30 (Reserva justo antes del cierre)
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-14 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', 3, 4), -- Cliente Sofía, 10:00 - 11:00
+('2025-11-14 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 16:30 - 17:30 (Reserva justo antes del cierre)

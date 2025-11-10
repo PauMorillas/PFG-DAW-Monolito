@@ -64,8 +64,8 @@ CREATE TABLE servicio(
 -- ====================================================================
 CREATE TABLE reserva(
     id INT PRIMARY KEY AUTO_INCREMENT,
-    fecha_inicio DATETIME NOT NULL, -- Fecha y hora de inicio de la CITA REAL.
-	fecha_fin DATETIME NOT NULL,
+    fecha_inicio DATETIME NOT NULL DEFAULT NOW(), -- Fecha y hora de inicio de la CITA REAL.
+	fecha_fin DATETIME NOT NULL DEFAULT NOW(),
     estado ENUM('ACTIVA', 'INACTIVA','CANCELADA') NOT NULL,
     
     id_cliente INT NOT NULL, -- FK: El CLIENTE que hace la reserva.
@@ -86,8 +86,8 @@ CREATE TABLE pre_reserva (
     token VARCHAR(255) NOT NULL UNIQUE,
     fecha_expiracion DATETIME NOT NULL,
     id_servicio INT NOT NULL,
-    fecha_inicio DATETIME NOT NULL,
-    fecha_fin DATETIME NOT NULL,
+    fecha_inicio DATETIME NOT NULL DEFAULT NOW(),
+    fecha_fin DATETIME NOT NULL DEFAULT NOW(),
     nombre_cliente VARCHAR(255) NOT NULL,
     correo_elec VARCHAR(255) NOT NULL,
     telf CHAR(9),
