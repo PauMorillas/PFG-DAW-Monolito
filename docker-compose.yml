@@ -7,17 +7,14 @@ services:
 
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: gest_eventos
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD : ${DB_PASSWORD}
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
     # Añadimos un healthcheck para asegurarnos de que la base de datos está lista antes de que la aplicación intente conectarse
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-      start_period: 10s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
     # Mapea el puerto del host al puerto del contenedor 
       - "3306:3306"
@@ -29,15 +26,40 @@ services:
       # Configuración de MySQL
       - ./db_init/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
 
-# Servicio de la aplicación Java Spring Boot
+  # ---------------------------------------------------------------------------------------- 
+  # API de Dominios Permitidos (Frontend/API)
+  allowed_domains_api:
+    container_name: pfg_allowed_domains_api
+    build:
+      context: ./allowed-domains-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/up || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+# ----------------------------------------------------------------------------------------
+  # Servicio de la aplicación principal Java con Spring Boot
   app:
-    build: . # Busca el DockerFile en el directorio actual
+    build:
+      context: ./gest-eventos-app
+      dockerfile: Dockerfile
     container_name: pfg_app
     restart: on-failure
     ports:
       - "8081:${SV_PORT}" #Mapea el puerto del host al puerto del contenedor
     depends_on:
-      - mysql_db # Asegura que el servicio de base de datos se inicie antes que la aplicación
+      allowed_domains_api:
+        condition: service_started # Espera a que el contenedor de dominios inicie
+      mysql_db:
+        condition: service_healthy # Espera a la DB
     environment:
         - SPRING_DATASOURCE_URL=${DB_URL}
         - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
@@ -49,7 +71,7 @@ services:
         - SV_PORT=${SV_PORT}
         - API_DOMAIN_URL=${API_DOMAIN_URL}
         - API_SECRET=${API_SECRET}
-        - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080 http://localhost:3306"
+        - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080"
 
 volumes:
   db_data: # Solo se nombra el volumen que necesita ser persistente

@@ -1,3 +1,4 @@
+USE gest_eventos;
 -- ====================================================================
 -- DATOS DE PRUEBA: INSERTS
 -- ====================================================================
@@ -87,9 +88,9 @@ INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) V
 ('2025-11-12 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 11:30 - 12:30
 
 -- Jueves 13/11/2025
--- Servicio 5 (Revisión Pre-ITV, 120min) - Estado 'PENDIENTE' para variar
+-- Servicio 5 (Revisión Pre-ITV, 120min) - Estado 'INACTIVA' para variar
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'PENDIENTE', 1, 5); -- Cliente Marta, 08:30 - 10:30
+('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', 1, 5); -- Cliente Marta, 08:30 - 10:30
 
 -- Viernes 14/11/2025
 -- Servicio 4 (Cambio de Aceite, 60min)
