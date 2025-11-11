@@ -23,14 +23,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DominioServiceImpl implements DominioService {
 
+    public DominioServiceImpl(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate; 
+    }
+
     @Value("${api.domain.url}")
     private String apiUrl;
 
     @Value("${api.default.domains}")
     private String defaultDomains;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     /**
      * Llama al endpoint /allowed-domains que devuelve un texto plano con dominios
@@ -86,7 +89,6 @@ public class DominioServiceImpl implements DominioService {
         if (parsed.isEmpty()) {
             return Arrays.asList("http://localhost:4200");
         }
-        System.out.println(parsed);
         return parsed;
     }
 

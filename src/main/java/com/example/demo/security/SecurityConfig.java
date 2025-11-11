@@ -18,18 +18,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.example.demo.service.DominioService;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class SecurityConfig {
 
-	@Value("${api.token}")
-    private String apiToken;
+	@Value("${api.secret}")
+    private final String apiToken = null;
 
-	@Autowired()
-	private DominioService dominioService;
-	
+	private final DominioService dominioService = null;
+
 	@Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
@@ -94,15 +96,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
 
+				log.info("Políticas creadas: " + buildCspPolicy());
         return http.build();
     }
 
-	// Método que genera la política CSP dinámicamente o estáticamente
-	// TODO: El método buildCspPolicy debe ser modificado para usar el
-	// dominioService
+	// Método que genera la política CSP dinámicamente
 	private String buildCspPolicy() {
-
-		// --- LÓGICA DE PRODUCCIÓN REAL (para tu MEMORIA FINAL) ---
 
 		String allowedDomainsString = "";
 
@@ -112,6 +111,7 @@ public class SecurityConfig {
 			List<String> allowedDomains = dominioService.findAll();
 			// Crea un String separando los dominios por espacio
 			allowedDomainsString = String.join(" ", allowedDomains);
+			log.info("Dominios permitidos: {}", allowedDomainsString);
 		}
 
 		// En caso de fallar la consulta, usamos 'self' para evitar errores de seguridad
