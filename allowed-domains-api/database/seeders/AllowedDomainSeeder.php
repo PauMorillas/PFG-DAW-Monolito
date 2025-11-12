@@ -6,7 +6,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon; // Usamos Carbon para las timestamps
+use Carbon\Carbon; 
+use Schema;// Usamos Carbon para las timestamps
 
 class AllowedDomainSeeder extends Seeder
 {
@@ -16,9 +17,22 @@ class AllowedDomainSeeder extends Seeder
     public function run(): void
     {
         // Limpiamos la tabla para que no haya duplicados
-        DB::table('allowed_domains')->truncate(); 
+        // Solo correr si la tabla existe
+        if (!Schema::hasTable('allowed_domains')) {
+            $this->command->warn('Tabla "allowed_domains" no existe, se omite el seeder.');
+            return;
+        }
+
+        // Solo limpiar e insertar si estamos en entorno local o de desarrollo
+        if (!app()->environment(['local', 'development', 'testing'])) {
+            $this->command->warn('Saltando seed de allowed_domains en entorno de producción.');
+            return;
+        }
 
         $now = Carbon::now();
+
+        // Limpieza controlada (sin TRUNCATE)
+        DB::table('allowed_domains')->delete();
 
         DB::table('allowed_domains')->insert([
             [

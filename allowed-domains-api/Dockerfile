@@ -17,7 +17,10 @@ RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoload
  && npm run build \
  && php artisan key:generate || true \
  && php artisan config:cache || true \
- && php artisan route:cache || true \
+ && php artisan route:cache || true
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8000
-CMD ["php", "artisan", "serve", "--port=8000"]
+ENTRYPOINT ["docker-entrypoint.sh"]

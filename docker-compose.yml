@@ -38,13 +38,9 @@ services:
     depends_on:
       mysql_db:
         condition: service_healthy
-    restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/up || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    restart: on-failure
+    env_file:
+      - ./allowed-domains-api/.env
 # ----------------------------------------------------------------------------------------
   # Servicio de la aplicación principal Java con Spring Boot
   app:

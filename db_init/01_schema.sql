@@ -2,9 +2,6 @@
 DROP DATABASE IF EXISTS gest_eventos;
 CREATE DATABASE gest_eventos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-DROP DATABASE IF EXISTS allowed_domains_api;
-CREATE DATABASE allowed_domains_api CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- Creación del Usuario y Asignación de Permisos
 -- El usuario se crea con el host '%' para permitir conexiones desde otros contenedores
 -- (que tienen nombres de host diferentes, pero están en la misma red Docker).
