@@ -56,6 +56,8 @@ services:
         condition: service_started # Espera a que el contenedor de dominios inicie
       mysql_db:
         condition: service_healthy # Espera a la DB
+    env_file:
+      - ./.env
     environment:
         - SPRING_DATASOURCE_URL=${DB_URL}
         - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}

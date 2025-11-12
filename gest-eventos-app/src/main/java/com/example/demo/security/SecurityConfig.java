@@ -28,19 +28,19 @@ import java.util.Arrays;
 public class SecurityConfig {
 
 	@Value("${api.secret}")
-	private final String apiToken = null;
+	private final String apiToken;
 
 	private final DominioService dominioService;
 
-	public SecurityConfig(@Lazy DominioService dominioService) {
+	public SecurityConfig(@Lazy DominioService dominioService, @Value("${api.secret}") String apiToken) {
 		this.dominioService = dominioService;
+		this.apiToken = apiToken;
 	}
 
 	@Bean
 	public RestTemplate restTemplate() {
 		RestTemplate restTemplate = new RestTemplate();
 		try {
-
 			restTemplate.getInterceptors().add((request, body, execution) -> {
 				request.getHeaders().set("Authorization", "Bearer " + apiToken);
 				request.getHeaders().set("Accept", "text/plain");
@@ -108,7 +108,6 @@ public class SecurityConfig {
 						.ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
-
 		return http.build();
 	}
 }
