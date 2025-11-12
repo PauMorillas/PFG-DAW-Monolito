@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.context.annotation.Lazy;
 
 import com.example.demo.service.DominioService;
 
@@ -27,20 +28,32 @@ import java.util.Arrays;
 public class SecurityConfig {
 
 	@Value("${api.secret}")
-    private final String apiToken = null;
+	private final String apiToken = null;
 
-	private final DominioService dominioService = null;
+	private final DominioService dominioService;
+
+	public SecurityConfig(@Lazy DominioService dominioService) {
+		this.dominioService = dominioService;
+	}
 
 	@Bean
-    public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getInterceptors().add((request, body, execution) -> {
-            request.getHeaders().add("Authorization", "Bearer " + apiToken);
-            return execution.execute(request, body);
-        });
-        return restTemplate;
-    }
-	
+	public RestTemplate restTemplate() {
+		RestTemplate restTemplate = new RestTemplate();
+		try {
+
+			restTemplate.getInterceptors().add((request, body, execution) -> {
+				request.getHeaders().set("Authorization", "Bearer " + apiToken);
+				request.getHeaders().set("Accept", "text/plain");
+				return execution.execute(request, body);
+			});
+			return restTemplate;
+		} catch (Exception e) {
+			log.error("Error al obtener los dominios permitidos. Usando fallback a los dominios por defecto",
+					e.getMessage());
+			return restTemplate;
+		}
+	}
+
 	// 1. Define el encriptador de contraseñas
 	@Bean
 	public PasswordEncoder passwordEncoder() {
@@ -63,75 +76,39 @@ public class SecurityConfig {
 
 	// 3. Define la cadena de filtros de seguridad (Autorización)
 	@Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors() // Usará automáticamente el CorsConfigurationSource del CorsConfig
-            .and()
-            .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.disable())
-                .contentSecurityPolicy(csp -> csp
-                    .policyDirectives(buildCspPolicy())))
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(
-                    "/api/clientes/registro",
-                    "/public/**",
-                    "/register",
-                    "/public/api/calendario/**",
-                    "/public/reservas/confirmar/",
-                    "/mail/**",
-                    "/css/**",
-                    "/js/**",
-                    "/login",
-                    "/error",
-                    "/favicon.ico"
-                ).permitAll()
-                .requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
-                .anyRequest().authenticated())
-            .formLogin(form -> form
-                .loginPage("/login")
-                .defaultSuccessUrl("/home", true)
-                .permitAll())
-            .logout(logout -> logout.permitAll())
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http
+				.cors() // Usará automáticamente el CorsConfigurationSource del CorsConfig
+				.and()
+				.headers(headers -> headers
+						.frameOptions(frameOptions -> frameOptions.disable()) // No bloquear iframes
+				)
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(
+								"/api/clientes/registro",
+								"/public/**",
+								"/register",
+								"/public/api/calendario/**",
+								"/public/reservas/confirmar/",
+								"/mail/**",
+								"/css/**",
+								"/js/**",
+								"/login",
+								"/error",
+								"/favicon.ico")
+						.permitAll()
+						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
+						.anyRequest().authenticated())
+				.formLogin(form -> form
+						.loginPage("/login")
+						.defaultSuccessUrl("/home", true)
+						.permitAll())
+				.logout(logout -> logout.permitAll())
+				.csrf(csrf -> csrf
+						.ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
 
-				log.info("Políticas creadas: " + buildCspPolicy());
-        return http.build();
-    }
+		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 
-	// Método que genera la política CSP dinámicamente
-	private String buildCspPolicy() {
-
-		String allowedDomainsString = "";
-
-		// Solo intentamos consultar si el repositorio ha sido inyectado
-		if (dominioService != null) {
-			// Consulta la BBDD para obtener los dominios registrados por los gerentes
-			List<String> allowedDomains = dominioService.findAll();
-			// Crea un String separando los dominios por espacio
-			allowedDomainsString = String.join(" ", allowedDomains);
-		}
-
-		log.info("Dominios permitidos: {}", allowedDomainsString);
-
-		// En caso de fallar la consulta, usamos 'self' para evitar errores de seguridad
-		String finalDomains = (allowedDomainsString.isEmpty() || dominioService == null) ? "'self'"
-				: "'self' " + allowedDomainsString;
-
-		// La directiva frame-ancestors debe incluir 'self' MÁS los dominios de clientes
-		String frameAncestorsDirective = "frame-ancestors " + finalDomains + " *;";
-		// Nota: mantenemos * para la demo
-		// si la lista es vacía
-
-		// Resto de las directivas CSP
-		String defaultSources = "default-src 'self';";
-		String styleSources = "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;";
-		String scriptSources = "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;";
-		String fontSources = "font-src 'self' https://cdn.jsdelivr.net data:;";
-
-		return frameAncestorsDirective +
-				defaultSources +
-				styleSources +
-				scriptSources + fontSources;
+		return http.build();
 	}
 }

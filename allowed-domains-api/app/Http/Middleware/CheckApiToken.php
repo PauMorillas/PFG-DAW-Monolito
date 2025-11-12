@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckApiToken
@@ -15,11 +16,17 @@ class CheckApiToken
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken();
-        if ($token !== env('API_SECRET')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        if ($request->is('api/*')) {
+            $tokenEsperado = config('api.secret') ?? 'NO-SET';
+            $tokenRecibido = $request->bearerToken() ?? 'NO-SET';
+
+            if (!$tokenRecibido || $tokenRecibido !== $tokenEsperado) {
+                return response()->json([
+                    'error' => 'Unauthorized',
+                ], 401);
+            }
         }
-        // si el token es válido, continuar con la solicitud
-        return $next($request);
+
+        return $next($request); 
     }
 }

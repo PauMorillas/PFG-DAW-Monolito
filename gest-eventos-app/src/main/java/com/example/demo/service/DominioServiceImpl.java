@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DominioServiceImpl implements DominioService {
 
     public DominioServiceImpl(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate; 
+        this.restTemplate = restTemplate;
     }
 
     @Value("${api.domain.url}")
@@ -53,22 +53,26 @@ public class DominioServiceImpl implements DominioService {
                 return parseDomains(defaultDomains);
             }
 
-            // Split por cualquier whitespace (espacios, tabs, nuevas líneas), trim y filtrar vacíos
+            // Split por cualquier whitespace (espacios, tabs, nuevas líneas), trim y
+            // filtrar vacíos
             List<String> allowedDomains = Arrays.stream(body.split("\\s+"))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
 
             if (allowedDomains.isEmpty()) {
-                log.warn("Los dominios permitidos quedaron vacíos despues de parsearlos - usando fallback a los dominios por defecto", endpoint);
+                log.warn(
+                        "Los dominios permitidos quedaron vacíos despues de parsearlos - usando fallback a los dominios por defecto",
+                        endpoint);
                 return parseDomains(defaultDomains);
             }
 
             return allowedDomains;
 
         } catch (RestClientException e) {
-            // Manejo sencillo: log y fallback a las URLs por defecto definidas en application.properties
-            log.error("Error al obtener los dominios permitidos. Usando fallback a los dominios por defecto", endpoint, e.getMessage());
+            // Manejo sencillo: log y fallback a las URLs por defecto definidas en
+            // application.properties
+            log.error("Error al obtener los dominios permitidos desde {}: ", endpoint, e);
             return parseDomains(defaultDomains);
         }
     }

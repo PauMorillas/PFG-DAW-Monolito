@@ -6,6 +6,7 @@ echo "--- 📦 Limpiando y compilando la aplicación Java (Maven) ---"
 
 # Ejecuta la limpieza de Maven, compila y salta los tests
 # mvn clean package -DskipTests es la opción que pediste
+cd ./gest-eventos-app
 mvn clean package -DskipTests
 
 # Verificar si la compilación fue exitosa
@@ -19,6 +20,8 @@ echo "✅ Compilación exitosa. JAR listo."
 # --- PASO 2: Limpieza Completa de Docker ---
 
 echo "--- 🧹 Deteniendo y eliminando contenedores, redes y volumen de la BD ---"
+
+cd ..
 
 # El comando 'down -v' es la clave para eliminar el volumen de datos persistentes.
 # La opción '--remove-orphans' previene conflictos con recursos no gestionados.
