@@ -33,11 +33,14 @@ public class Cliente {
 	@Column(name= "pass_hash", nullable = false)
 	private String pass;
 
+	private String rol;
+
 	// Relación 1:N con Reserva. Un Cliente puede hacer muchas Reservas.
 	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Reserva> listaReservas;
 
 	public Cliente() {
 		this.listaReservas = new ArrayList<Reserva>();
+		this.rol = "CLIENTE";
 	}
 }

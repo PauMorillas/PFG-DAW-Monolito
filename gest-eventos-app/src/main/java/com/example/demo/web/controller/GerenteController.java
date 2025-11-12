@@ -6,9 +6,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.service.GerenteService;
+
+import com.example.demo.exception.ValidationException;
 
 @Controller
 public class GerenteController {
@@ -27,6 +33,7 @@ public class GerenteController {
 
 	// Lógica: Sirve la página de registro con un dto vacío para rellenar con la
 	// informacion del formulario
+	// TODO: Cambiar a la vista de Angular
 	@GetMapping("/register")
 	public ModelAndView register() {
 		ModelAndView mav = new ModelAndView("public/register");
@@ -34,27 +41,29 @@ public class GerenteController {
 		return mav;
 	}
 
+	// TODO: Hacerlo REST 
 	// Lógica: Procesa el formulario y registra el nuevo Gerente.
-	@PostMapping("/register")
-	public ModelAndView registerUser(@ModelAttribute("gerenteDTO") GerenteDTO gerenteDTO) {
-		ModelAndView mav = new ModelAndView();
-		String nombreVista = "";
+	@PostMapping("/api/gerentes/registro")
+	public ResponseEntity<?> registrarGerente(@RequestBody GerenteDTO gerenteDTO) {
 		try {
 			// Llama al servicio para manejar la lógica de negocio (encriptación y guardado)
 			gerenteService.save(gerenteDTO);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Gerente registrado con éxito");
+            return ResponseEntity.ok(response);
 
-			// Redirigir al login con un parámetro de éxito
-			nombreVista = "redirect:/login?registered";
-
-		} catch (IllegalStateException error) {
-			// Manejo de errores:
-			mav.addObject("gerenteDTO", gerenteDTO); // Mantenemos los datos introducidos
-			mav.addObject("error", error.getMessage()); // Mensaje de error personalizado del service
-			nombreVista = "register"; // Devolver al registro
-		}
-
-		mav.setViewName(nombreVista);
-		return mav;
+		} catch (ValidationException ex) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", ex.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception ex) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Error interno del servidor: " + ex.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
 	}
 
 }

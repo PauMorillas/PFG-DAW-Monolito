@@ -22,7 +22,7 @@ CREATE TABLE gerente(
 	id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50),
     correo_elec VARCHAR(100) UNIQUE NOT NULL,
-	pass VARCHAR(125) NOT NULL,
+	pass_hash VARCHAR(125) NOT NULL,
 	telf CHAR(9)
 );
 

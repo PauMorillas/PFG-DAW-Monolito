@@ -18,10 +18,12 @@ public class GerenteDTO implements Serializable {
 	private String correoElec;
 	private String pass;
 	private String telf;
+	private String rol;
 	private List<NegocioDTO> listaNegociosDTO;
 
 	public GerenteDTO() {
 		this.listaNegociosDTO = new ArrayList<NegocioDTO>();
+		this.rol = "gerente";
 	}
 
 	@Override

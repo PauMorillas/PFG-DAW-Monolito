@@ -17,10 +17,13 @@ public class ClienteDTO implements Serializable {
 	private String email;
 	private String telf;
 	private String pass;
+	private String rol;
+
 	private List<ReservaDTO> listaReservasDTO;
 
 	public ClienteDTO() {
 		this.listaReservasDTO = new ArrayList<ReservaDTO>();
+		this.rol = "CLIENTE";
 	}
 
 	@Override

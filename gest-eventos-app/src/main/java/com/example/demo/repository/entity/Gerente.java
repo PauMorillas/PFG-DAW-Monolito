@@ -26,10 +26,12 @@ public class Gerente {
 	@Column(name = "correo_elec", unique = true, nullable = false)
 	private String correoElec;
 
-	@Column(nullable = false)
+	@Column(name = "pass_hash", nullable = false)
 	private String pass;
 
 	private String telf;
+
+	private String rol;
 
 	// Relación 1:N con Negocio. Un Gerente puede serlo de varios negocios.
 	@OneToMany(mappedBy = "gerente", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -38,5 +40,6 @@ public class Gerente {
 	// Constructor sin argumentos requerido por JPA
 	public Gerente() {
 		this.listaNegocios = new ArrayList<>();
+		this.rol = "gerente";
 	}
 }

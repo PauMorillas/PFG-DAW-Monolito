@@ -9,7 +9,7 @@ SET @PASSWORD_HASH = '$2a$10$wK1W6d.bUe7t9Xl0YgH2a.u5WfD9R0Jz4ZqXmFvF5zC0nI8HkS3
 
 -- 1. INSERTAR GERENTES
 -- ====================================================================
-INSERT INTO gerente (nombre, correo_elec, pass, telf) VALUES
+INSERT INTO gerente (nombre, correo_elec, pass_hash, telf) VALUES
 ('Juan Pérez', 'juan.perez@gestor.com', @PASSWORD_HASH, '600111222'),
 ('Laura Gómez', 'laura.gomez@gestor.com', @PASSWORD_HASH, '600333444'),
 ('Carlos Ruiz', 'carlos.ruiz@gestor.com', @PASSWORD_HASH, '600555666');
