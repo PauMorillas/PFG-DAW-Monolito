@@ -1,29 +1,21 @@
 <?php
 
-// database/seeders/AllowedDomainSeeder.php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon; 
-use Schema;// Usamos Carbon para las timestamps
+use Carbon\Carbon;
+use Schema;
 
 class AllowedDomainSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Limpiamos la tabla para que no haya duplicados
-        // Solo correr si la tabla existe
         if (!Schema::hasTable('allowed_domains')) {
             $this->command->warn('Tabla "allowed_domains" no existe, se omite el seeder.');
             return;
         }
 
-        // Solo limpiar e insertar si estamos en entorno local o de desarrollo
         if (!app()->environment(['local', 'development', 'testing'])) {
             $this->command->warn('Saltando seed de allowed_domains en entorno de producción.');
             return;
@@ -31,38 +23,50 @@ class AllowedDomainSeeder extends Seeder
 
         $now = Carbon::now();
 
-        // Limpieza controlada (sin TRUNCATE)
         DB::table('allowed_domains')->delete();
 
         DB::table('allowed_domains')->insert([
+            // FRONTEND Angular local
+            [
+                'dominio' => 'http://localhost:4200',
+                'activo' => 1,
+                'descripcion' => 'Frontend Angular local (registro-cliente).',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // SPRING BOOT frontend público
+            [
+                'dominio' => 'http://localhost:8081',
+                'activo' => 1,
+                'descripcion' => 'Frontend público de Spring Boot (iframe host).',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // API Laravel local
+            [
+                'dominio' => 'http://localhost:8000',
+                'activo' => 1,
+                'descripcion' => 'API de dominios permitidos (Laravel).',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            // Producción (ejemplo)
             [
                 'dominio' => 'https://cliente-produccion.com',
-                'activo' => 1, // 1 = true
-                'descripcion' => 'Dominio principal del cliente XYZ para iFrame.',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'dominio' => 'https://otro-microservicio.net',
                 'activo' => 1,
-                'descripcion' => 'Dominio de otro microservicio interno.',
+                'descripcion' => 'Dominio principal de producción del cliente.',
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
+            // CDN para scripts y estilos
             [
-                'dominio' => 'http://localhost:3000',
+                'dominio' => 'https://cdn.jsdelivr.net',
                 'activo' => 1,
-                'descripcion' => 'Dominio de desarrollo local del frontend.',
+                'descripcion' => 'CDN público para scripts y estilos.',
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-            [
-                'dominio' => 'https://antiguo-dominio.com',
-                'activo' => 0, // 0 = false (inactivo)
-                'descripcion' => 'Dominio antiguo, marcado como inactivo para pruebas.',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // Si quieres añadir más CDNs, solo agregarlos aquí
         ]);
     }
 }

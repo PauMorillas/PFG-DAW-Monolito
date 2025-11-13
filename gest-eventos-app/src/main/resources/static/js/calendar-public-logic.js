@@ -72,7 +72,7 @@ function initCalendar(config) {
     events: "/public/api/calendario/eventos/" + idServicio,
 
     // 4. Manejo de la selección de un hueco libre (Validación Final de Duración e Inicio del Proceso de Reserva)
-    select: function (info) {
+    select: async function (info) {
       const diffMs = info.end - info.start;
       const diffMin = diffMs / 1000 / 60;
       const roundedDiffMin = Math.round(diffMin);
@@ -97,8 +97,25 @@ function initCalendar(config) {
         return;
       }
 
+      const clientData = await getClientDataFromForm(
+        info.startStr,
+        info.endStr
+      );
+
+      if (!clientData) {
+        Swal.fire({
+          title: "Reserva Cancelada",
+          text: "Debes completar los datos para reservar.",
+          icon: "info",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        calendar.unselect();
+        return;
+      }
+
       // Si la duración es correcta, procedemos a la reserva
-      sendPreReservaRequest(idServicio, info.startStr, info.endStr);
+      sendPreReservaRequest(idServicio, info.startStr, info.endStr, clientData);
 
       calendar.unselect();
     },
@@ -193,21 +210,7 @@ async function getClientDataFromForm(startStr, endStr) {
  * @param {string} startStr Fecha y hora de inicio del slot.
  * @param {string} endStr Fecha y hora de fin del slot.
  */
-async function sendPreReservaRequest(idServicio, startStr, endStr) {
-  // Llama a la función asíncrona y espera el resultado.
-  const clientData = await getClientDataFromForm(startStr, endStr);
-
-  if (!clientData) {
-    Swal.fire({
-      title: "Reserva Cancelada",
-      text: "Debes completar los datos para reservar.",
-      icon: "info",
-      timer: 2000,
-      showConfirmButton: false,
-    });
-    return;
-  }
-
+async function sendPreReservaRequest(idServicio, startStr, endStr, clientData) {
   // Ensamblamos el ReservaRequestDTO
   const reservaRequestDTO = {
     idServicio: idServicio,
@@ -231,13 +234,12 @@ async function sendPreReservaRequest(idServicio, startStr, endStr) {
 
     if (response.status === 202) {
       Swal.fire({
-        title: "¡Todo en orden!",
-        text: "¡Pre-Reserva exitosa! Revisa tu correo para confirmar la cita.",
+        title: "Reserva pendiente!",
+        text: "Revisa tu correo para confirmar la cita. De lo contrario, en 30 min se cancelará.",
         icon: "success",
         confirmButtonText: "¡Entendido!",
       });
     } else {
-      // Maneja errores de validación (400, 409 Conflict si ya está ocupado)
       Swal.fire({
         title: "¡Error!",
         text: `Error al crear la pre-reserva. Causa: ${responseText}`,
@@ -310,7 +312,6 @@ async function showClientForm(formattedStart, formattedEnd) {
     function onMessage(event) {
       if (event.origin !== ANGULAR_ORIGIN) return; // seguridad
       const data = event.data;
-
       if (data.type === "clienteData") {
         window.removeEventListener("message", onMessage);
         resolve(data.data);
@@ -326,7 +327,6 @@ async function showClientForm(formattedStart, formattedEnd) {
     window.location.href = ANGULAR_URL;
   });
 }
-
 
 /**
  * [MODAL] Muestra el modal de SweetAlert2 y gestiona la validación interna.

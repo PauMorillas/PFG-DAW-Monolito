@@ -42,14 +42,18 @@ public class CspFilter extends OncePerRequestFilter {
         String frameSrc = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
         // Construye la directiva script-src igual que frame-ancestors
         String scriptSrc = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
+        
+        String connectSrc = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
         // Construye la CSP completa
         String csp = "frame-ancestors " + frameAncestors + " *;" +
                 "frame-src " + frameSrc + ";" +
+                "connect-src " + connectSrc +
                 "default-src 'self';" +
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" +
                 "script-src " + scriptSrc + ";" +
                 "font-src 'self' https://cdn.jsdelivr.net data:;";
-        log.info("Políticas generadas: {}", csp);
+
+        log.info("Políticas generadas: " + csp);
 
         // Añade la cabecera CSP a la respuesta
         response.setHeader("Content-Security-Policy", csp);
