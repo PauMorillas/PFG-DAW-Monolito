@@ -86,6 +86,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(
 								"/api/clientes/registro",
+								"/api/gerentes/registro",
 								"/public/**",
 								"/register",
 								"/public/api/calendario/**",
@@ -105,7 +106,7 @@ public class SecurityConfig {
 						.permitAll())
 				.logout(logout -> logout.permitAll())
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
+						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();

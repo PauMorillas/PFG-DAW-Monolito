@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.Map;
 import java.util.HashMap;
 
@@ -16,7 +18,7 @@ import com.example.demo.service.GerenteService;
 
 import com.example.demo.exception.ValidationException;
 
-@Controller
+@RestController
 public class GerenteController {
 
 	@Autowired

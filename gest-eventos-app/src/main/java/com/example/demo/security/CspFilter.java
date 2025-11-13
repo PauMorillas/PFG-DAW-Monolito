@@ -28,7 +28,10 @@ public class CspFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
+        if (request.getHeader("Referer") != null) {
+            log.info(request.getHeader("Referer"));
+        }
+        
         // Obtiene los dominios actuales desde Laravel
         List<String> allowedDomains = dominioService.findAll();
         String allowedDomainsString = String.join(" ", allowedDomains);

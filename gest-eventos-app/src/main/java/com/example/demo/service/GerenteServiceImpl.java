@@ -40,7 +40,7 @@ public class GerenteServiceImpl implements GerenteService {
 	private boolean validarDatosGerente(GerenteDTO gerenteDTO) throws ValidationException {
 		boolean valido = true;
 		// Validación 1: Correo Electrónico Único
-		if (gerenteRepository.findByCorreoElec(gerenteDTO.getCorreoElec()).isPresent()) {
+		if (gerenteRepository.findByEmail(gerenteDTO.getCorreoElec()).isPresent()) {
 			// Si el email existe, lanzamos la excepción con el mensaje de error
 			valido = false;
 			throw new ValidationException("El correo electrónico ya está registrado. Por favor, utiliza otro.");

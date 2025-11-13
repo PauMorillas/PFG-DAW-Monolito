@@ -9,11 +9,10 @@ SET @PASSWORD_HASH = '$2a$10$wK1W6d.bUe7t9Xl0YgH2a.u5WfD9R0Jz4ZqXmFvF5zC0nI8HkS3
 
 -- 1. INSERTAR GERENTES
 -- ====================================================================
-INSERT INTO gerente (nombre, correo_elec, pass_hash, telf) VALUES
-('Juan Pérez', 'juan.perez@gestor.com', @PASSWORD_HASH, '600111222'),
-('Laura Gómez', 'laura.gomez@gestor.com', @PASSWORD_HASH, '600333444'),
-('Carlos Ruiz', 'carlos.ruiz@gestor.com', @PASSWORD_HASH, '600555666');
-
+INSERT INTO gerente (nombre, correo_elec, pass_hash, telf, rol) VALUES
+('Juan Pérez', 'juan.perez@gestor.com', @PASSWORD_HASH, '600111222', 'GERENTE'),
+('Laura Gómez', 'laura.gomez@gestor.com', @PASSWORD_HASH, '600333444', 'GERENTE'),
+('Carlos Ruiz', 'carlos.ruiz@gestor.com', @PASSWORD_HASH, '600555666', 'GERENTE');
 
 -- 2. INSERTAR NEGOCIOS
 -- ====================================================================
@@ -64,10 +63,10 @@ INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) 
 
 -- 4. INSERTAR CLIENTES
 -- ====================================================================
-INSERT INTO cliente (nombre, correo_elec, telf) VALUES
-('Marta Torres', 'marta@cliente.es', '611000111'),
-('Alberto Vidal', 'alberto@cliente.es', '611222333'),
-('Sofía Ramos', 'sofia@cliente.es', '611444555');
+INSERT INTO cliente (nombre, correo_elec, telf, rol) VALUES
+('Marta Torres', 'marta@cliente.es', '611000111', 'CLIENTE'),
+('Alberto Vidal', 'alberto@cliente.es', '611222333', 'CLIENTE'),
+('Sofía Ramos', 'sofia@cliente.es', '611444555', 'CLIENTE');
 
 -- 5. INSERTAR RESERVAS (Citas)
 -- ====================================================================

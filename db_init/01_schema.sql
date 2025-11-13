@@ -23,7 +23,8 @@ CREATE TABLE gerente(
     nombre VARCHAR(50),
     correo_elec VARCHAR(100) UNIQUE NOT NULL,
 	pass_hash VARCHAR(125) NOT NULL,
-	telf CHAR(9)
+	telf CHAR(9),
+    rol ENUM('CLIENTE', 'GERENTE') NOT NULL DEFAULT 'GERENTE'
 );
 
 -- ====================================================================
@@ -51,7 +52,8 @@ CREATE TABLE cliente(
     nombre VARCHAR(100) NOT NULL,
     correo_elec VARCHAR(100), -- No es único aquí, ya que dos negocios pueden tener clientes con el mismo email.
     pass_hash VARCHAR(125),
-    telf CHAR(9)
+    telf CHAR(9),
+    rol ENUM('CLIENTE', 'GERENTE') NOT NULL DEFAULT 'CLIENTE'
 );
 
 -- ====================================================================

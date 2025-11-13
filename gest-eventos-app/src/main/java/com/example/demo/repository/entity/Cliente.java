@@ -3,9 +3,13 @@ package com.example.demo.repository.entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.demo.model.Rol;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,7 +37,8 @@ public class Cliente {
 	@Column(name= "pass_hash", nullable = false)
 	private String pass;
 
-	private String rol;
+	@Enumerated(EnumType.STRING)
+	private Rol rol;
 
 	// Relación 1:N con Reserva. Un Cliente puede hacer muchas Reservas.
 	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -41,6 +46,6 @@ public class Cliente {
 
 	public Cliente() {
 		this.listaReservas = new ArrayList<Reserva>();
-		this.rol = "CLIENTE";
+		this.rol = Rol.CLIENTE;
 	}
 }

@@ -65,8 +65,6 @@ services:
         - SV_PORT=${SV_PORT}
         - MAIL_USERNAME=${MAIL_USERNAME}
         - MAIL_PASSWORD=${MAIL_PASSWORD}
-        - SPRING_PROFILES_ACTIVE=dev
-        - SV_PORT=${SV_PORT}
         - API_DOMAIN_URL=${API_DOMAIN_URL}
         - API_SECRET=${API_SECRET}
         - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080"
