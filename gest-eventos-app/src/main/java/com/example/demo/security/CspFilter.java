@@ -27,24 +27,28 @@ public class CspFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
         if (request.getHeader("Referer") != null) {
             log.info(request.getHeader("Referer"));
         }
-        
+
         // Obtiene los dominios actuales desde Laravel
         List<String> allowedDomains = dominioService.findAll();
         String allowedDomainsString = String.join(" ", allowedDomains);
 
         // Construye la directiva frame-ancestors
         String frameAncestors = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
-
+        // frame-src controla desde qué dominios se pueden cargar iframes en tu página
+        String frameSrc = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
+        // Construye la directiva script-src igual que frame-ancestors
+        String scriptSrc = (allowedDomainsString.isEmpty() ? "'self'" : "'self' " + allowedDomainsString);
         // Construye la CSP completa
         String csp = "frame-ancestors " + frameAncestors + " *;" +
-                     "default-src 'self';" +
-                     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" +
-                     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" +
-                     "font-src 'self' https://cdn.jsdelivr.net data:;";
+                "frame-src " + frameSrc + ";" +
+                "default-src 'self';" +
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" +
+                "script-src " + scriptSrc + ";" +
+                "font-src 'self' https://cdn.jsdelivr.net data:;";
         log.info("Políticas generadas: {}", csp);
 
         // Añade la cabecera CSP a la respuesta

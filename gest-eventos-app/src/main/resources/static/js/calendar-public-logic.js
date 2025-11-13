@@ -287,11 +287,54 @@ function formatSlotTimes(startStr, endStr) {
 }
 
 /**
+ * Muestra el formulario Angular dentro del iframe.
+ * Cambia el src a Angular y espera respuesta vía postMessage.
+ * @param {string} formattedStart
+ * @param {string} formattedEnd
+ *  */
+/**
+ * Muestra el formulario Angular en el mismo iframe (reemplaza el contenido actual)
+ * y espera la respuesta via postMessage.
+ */
+async function showClientForm(formattedStart, formattedEnd) {
+  const ANGULAR_URL = "http://localhost:4200/registro-cliente";
+  const ANGULAR_ORIGIN = "http://localhost:4200";
+
+  // Guardamos temporalmente los datos para que Angular los lea al cargar
+  sessionStorage.setItem(
+    "preReservaData",
+    JSON.stringify({ formattedStart, formattedEnd })
+  );
+
+  return new Promise((resolve) => {
+    function onMessage(event) {
+      if (event.origin !== ANGULAR_ORIGIN) return; // seguridad
+      const data = event.data;
+
+      if (data.type === "clienteData") {
+        window.removeEventListener("message", onMessage);
+        resolve(data.data);
+      } else if (data.type === "cancel") {
+        window.removeEventListener("message", onMessage);
+        resolve(null);
+      }
+    }
+
+    window.addEventListener("message", onMessage);
+
+    // Cambiamos la URL del propio iframe a Angular
+    window.location.href = ANGULAR_URL;
+  });
+}
+
+
+/**
  * [MODAL] Muestra el modal de SweetAlert2 y gestiona la validación interna.
  * @param {string} formattedStart - Hora de inicio formateada.
  * @param {string} formattedEnd - Hora de fin formateada.
  * @returns {Promise<object|null>} Promesa que resuelve a los datos del cliente o null si cancela.
  */
+/** 
 async function showClientForm(formattedStart, formattedEnd) {
   const { value: formValues } = await Swal.fire({
     title: "Confirma tu Reserva",
@@ -329,6 +372,7 @@ async function showClientForm(formattedStart, formattedEnd) {
   // Devolvemos el resultado directo de SweetAlert2
   return formValues || null;
 }
+*/
 
 // Aseguramos que el proceso de carga y inicialización comience cuando el DOM esté listo
 document.addEventListener("DOMContentLoaded", loadCalendarConfiguration);

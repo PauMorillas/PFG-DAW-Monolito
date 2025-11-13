@@ -61,6 +61,7 @@
     iframe.style.width = "100%";
     iframe.style.height = `calc(100% - ${config.iframeHeightOffset}px)`;
     iframe.style.border = "none";
+    iframe.id = "embedbook-iframe";
 
     // Ensamblar
     modalContent.appendChild(iframe);
