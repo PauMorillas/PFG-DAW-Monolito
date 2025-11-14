@@ -1,3 +1,22 @@
+console.log(
+  "%c[CALENDAR JS] Cargado en:",
+  "color: green; font-weight: bold;",
+  window.location.href
+);
+
+window.addEventListener("message", (e) => {
+  console.log(
+    "%c[CALENDAR JS][MESSAGE RECIBIDO]",
+    "color: green",
+    e.origin,
+    e.data
+  );
+});
+
+// TODO: Cambiar a la url de produccion
+const ANGULAR_ORIGIN = "http://localhost:4200";
+
+// (Este script se ejecuta en el contexto de dentro del iframe)
 /**
  * Función principal que inicializa el calendario con la configuración obtenida del backend.
  * @param {object} config - Objeto de configuración (ServicioConfigDTO) obtenido vía API.
@@ -5,7 +24,6 @@
 function initCalendar(config) {
   // Extraemos los datos del objeto de configuración para usar en FullCalendar
   const idServicio = config.idServicio;
-
   const duracionMinutos = config.duracionMinutos;
   const horaApertura = config.horaApertura;
   const horaCierre = config.horaCierre;
@@ -97,10 +115,9 @@ function initCalendar(config) {
         return;
       }
 
-      const clientData = await getClientDataFromForm(
-        info.startStr,
-        info.endStr
-      );
+      const clientData = await getClientDataFromForm(info.startStr, info.endStr, duracionMinutos, idServicio);
+
+      console.log(clientData);
 
       if (!clientData) {
         Swal.fire({
@@ -115,7 +132,7 @@ function initCalendar(config) {
       }
 
       // Si la duración es correcta, procedemos a la reserva
-      sendPreReservaRequest(idServicio, info.startStr, info.endStr, clientData);
+      await sendPreReservaRequest(idServicio, info.startStr, info.endStr, clientData);
 
       calendar.unselect();
     },
@@ -188,20 +205,63 @@ async function loadCalendarConfiguration() {
 }
 
 /**
- * Muestra un modal de formulario usando SweetAlert2, recopila datos y los devuelve.
- * @param {string} startStr - Fecha y hora de inicio de la reserva.
- * @param {string} endStr - Fecha y hora de fin de la reserva.
- * @returns {Promise<object|null>} Promesa que resuelve a los datos del cliente o null si cancela.
+ * Solicita al padre que abra el formulario Angular y espera la respuesta.
+ * NO toca el DOM del padre: usa postMessage.
  */
-async function getClientDataFromForm(startStr, endStr) {
-  // 1. Formatear las fechas
-  const { formattedStart, formattedEnd } = formatSlotTimes(startStr, endStr);
+function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
+  const PARENT_ORIGIN = window.parent === window ? window.location.origin : "*"; // si no hay parent real, fallback
+  const ANGULAR_ORIGIN = "http://localhost:4200"; // para comprobaciones al recibir respuesta
 
-  // 2. Mostrar el formulario y esperar los datos
-  const clientData = await showClientForm(formattedStart, formattedEnd);
+  return new Promise((resolve) => {
+    const preReserva = {
+      startStr,
+      endStr,
+      formattedStart: formatSlotTimes(startStr, endStr).formattedStart,
+      formattedEnd: formatSlotTimes(startStr, endStr).formattedEnd,
+      duracionMinutos,
+      idServicio,
+    };
 
-  // 3. Devolver los datos o null si se cancela
-  return clientData;
+    // timeout por si no llega respuesta (mejor UX)
+    const TIMEOUT_MS = 120000; // 2 minutos
+    let timeoutId = setTimeout(() => {
+      window.removeEventListener("message", onParentMessage);
+      console.warn("[CALENDAR] timeout esperando clienteData desde padre");
+      resolve(null);
+    }, TIMEOUT_MS);
+
+    // listener para recibir la respuesta re-enviada por el padre
+    function onParentMessage(ev) {
+      // Aceptamos mensajes sólo del padre del widget (event.origin === parentOrigin)
+      // No usamos '*' here; comprueba el origen real si lo conoces.
+      const msg = ev.data;
+      if (!msg) return;
+
+      if (msg.type === "clienteData") {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", onParentMessage);
+        resolve(msg.data);
+      } else if (msg.type === "cancel") {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", onParentMessage);
+        resolve(null);
+      }
+    }
+
+    window.addEventListener("message", onParentMessage);
+
+    // Mandamos petición al padre para que abra Angular
+    // IMPORTANT: targetOrigin preferible al origen conocido del padre.
+    try {
+      // Si conoces el origin del padre, reemplaza '*' por ese origen.
+      window.parent.postMessage({ type: "openClientForm", data: preReserva }, "*");
+    } catch (e) {
+      console.error("[CALENDAR] error enviando openClientForm al padre", e);
+      clearTimeout(timeoutId);
+      window.removeEventListener("message", onParentMessage);
+      resolve(null);
+    }
+  });
 }
 
 /**
@@ -323,8 +383,8 @@ async function showClientForm(formattedStart, formattedEnd) {
 
     window.addEventListener("message", onMessage);
 
-    // Cambiamos la URL del propio iframe a Angular
-    window.location.href = ANGULAR_URL;
+    // Cambiamos la URL del iframe al front de Angular (Este script se ejecuta en el contexto de dentro del iframe)
+    window.parent.document.getElementById("embedbook-iframe").src = ANGULAR_URL;
   });
 }
 

@@ -47,10 +47,10 @@ public class CspFilter extends OncePerRequestFilter {
         // Construye la CSP completa
         String csp = "frame-ancestors " + frameAncestors + " *;" +
                 "frame-src " + frameSrc + ";" +
-                "connect-src " + connectSrc +
+                "connect-src " + connectSrc + ";" +
                 "default-src 'self';" +
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" +
-                "script-src " + scriptSrc + ";" +
+                "script-src " + scriptSrc + "; " +
                 "font-src 'self' https://cdn.jsdelivr.net data:;";
 
         log.info("Políticas generadas: " + csp);
