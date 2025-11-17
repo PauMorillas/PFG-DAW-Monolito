@@ -1,176 +1,88 @@
 (function () {
   "use strict";
 
-  /* window.addEventListener("message", async (e) => {
-    const ANGULAR_ORIGIN = "http://localhost:4200";
-    try {
-      const origin = e.origin;
-      // Validar orígenes permitidos (ajusta según necesites)
-      const allowedParentOrigins = [
-        window.location.origin,
-        ANGULAR_ORIGIN,
-      ];
+  // TODO: PRODUCCION CAMBIAR A LA URL DE prod
+  function buildAngularUrl(preReserva) {
+    const base = "http://localhost:4200/registro-cliente";
+    const params = new URLSearchParams({
+      parentOrigin: window.location.origin,
+      preReservaData: encodeURIComponent(JSON.stringify(preReserva)),
+    });
+    return `${base}?${params.toString()}`;
+  }
 
-      if (!allowedParentOrigins.includes(origin)) {
-        console.warn("[PARENT] mensaje de origen no permitido", origin, e.data);
+  // =======================================================
+  // V. COMUNICACIÓN ENTRE CALENDARIO ↔ PADRE ↔ ANGULAR
+  // =======================================================
+
+  window.addEventListener("message", (event) => {
+    const msg = event.data || {};
+    if (msg.type !== "openClientForm") return;
+
+    const preReserva = msg.data;
+    const angularUrl = buildAngularUrl(preReserva);
+
+    const childWindow = event.source;
+    const childOrigin = event.origin;
+
+    const ANGULAR_ORIGIN = new URL(angularUrl).origin;
+    // Creamos un iframe dedicado para Angular
+    let angularIframe = document.getElementById("embedbook-angular-iframe");
+
+    if (!angularIframe) {
+      angularIframe = document.createElement("iframe");
+      angularIframe.id = "embedbook-angular-iframe";
+      angularIframe.style.position = "fixed";
+      angularIframe.style.top = "0";
+      angularIframe.style.left = "0";
+      angularIframe.style.width = "100%";
+      angularIframe.style.height = "100%";
+      angularIframe.style.border = "none";
+      angularIframe.style.zIndex = 10000;
+      document.body.appendChild(angularIframe);
+    }
+
+    // Cargar Angular
+    angularIframe.src = angularUrl;
+
+    console.log("[PARENT] Cargando Angular en iframe:", angularUrl);
+
+    // Handler temporal para mensajes desde Angular
+    function onAngularMessage(ev) {
+      if (ev.origin !== ANGULAR_ORIGIN) return;
+
+      const msg = ev.data || {};
+
+      // --- 1) SOLO procesamos nuestros propios tipos ---
+      if (msg.type === "clienteData") {
+        childWindow.postMessage(
+          { type: "clienteData", data: msg.data },
+          childOrigin
+        );
+        cleanup();
         return;
       }
 
-      const msg = e.data || {};
-      if (msg.type === "openClientForm") {
-        // Datos de pre-reserva enviados desde el iframe calendario
-        const preReserva = msg.data || {};
-        // Construir ANGULAR url con params para que Angular sepa quién es el parent y reciba la preReserva
-        const ANGULAR_BASE = ANGULAR_ORIGIN + "registro-cliente";
-        const params = new URLSearchParams({
-          parentOrigin: window.location.origin,
-          preReservaData: encodeURIComponent(JSON.stringify(preReserva)),
-        });
-        const ANGULAR_URL = `${ANGULAR_BASE}?${params.toString()}`;
-
-        // Cambiar el iframe (sigue siendo el mismo iframe que ya existe)
-        const iframe = document.getElementById("embedbook-iframe");
-        if (iframe) {
-          iframe.src = ANGULAR_URL;
-        } else {
-          console.error("[PARENT] embedbook-iframe no encontrado");
-        }
-
-        // Ahora añadimos un listener temporal para recibir la respuesta del formulario Angular
-        function onClientMessage(event) {
-          if (
-            event.origin !== window.location.origin &&
-            event.origin !== "http://localhost:4200"
-          ) {
-            console.warn(
-              "[PARENT] origen no permitido en clienteData",
-              event.origin
-            );
-            return;
-          }
-          const d = event.data || {};
-          if (d.type === "clienteData") {
-            window.removeEventListener("message", onClientMessage);
-            const cliente = d.data;
-            // Enviar la pre-reserva al backend desde el padre
-            fetch("/public/reservas/crear", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                idServicio: preReserva.idServicio,
-                fechaInicio: preReserva.startStr,
-                fechaFin: preReserva.endStr,
-                nombreCliente: cliente.nombreCliente,
-                correoElec: cliente.correoElec,
-                telf: cliente.telf,
-              }),
-            })
-              .then((resp) =>
-                resp.text().then((text) => ({ status: resp.status, text }))
-              )
-              .then(({ status, text }) => {
-                if (status === 202) {
-                  alert(
-                    "Reserva pendiente! Revisa tu correo para confirmar la cita."
-                  );
-                } else {
-                  alert("Error al crear la pre-reserva: " + text);
-                }
-                // volver a la vista calendario
-                iframe.src = `${window.location.origin}/public/servicios/${preReserva.idServicio}`;
-              })
-              .catch((err) => {
-                console.error("[PARENT] fallo al crear reserva", err);
-                alert("Error de conexión al crear la reserva.");
-                iframe.src = `${window.location.origin}/public/servicios/${preReserva.idServicio}`;
-              });
-          } else if (d.type === "cancel") {
-            window.removeEventListener("message", onClientMessage);
-            // volver a calendario
-            const iframe = document.getElementById("embedbook-iframe");
-            iframe &&
-              (iframe.src = `${window.location.origin}/public/servicios/${preReserva.idServicio}`);
-          }
-        }
-
-        window.addEventListener("message", onClientMessage);
+      if (msg.type === "cancel") {
+        childWindow.postMessage({ type: "cancel" }, childOrigin);
+        cleanup();
+        return;
       }
-    } catch (err) {
-      console.error("[PARENT] error en message handler", err);
+
+      // --- 2) SI ES CUALQUIER OTRA COSA: NO CERRAMOS EL IFRAME ---
+      console.log("[PARENT] Mensaje ignorado desde Angular:", msg);
     }
-  }); */
-window.addEventListener("message", (event) => {
-  const msg = event.data || {};
-  if (msg.type !== "openClientForm") return;
 
-  // quien pide: ventana child (iframe calendario)
-  const childWindow = event.source;
-  const childOrigin = event.origin; // recuerda reenviarlo al origen correcto
-
-  const preReserva = msg.data || {};
-  const ANGULAR_ORIGIN = "http://localhost:4200";
-  const ANGULAR_BASE = `${ANGULAR_ORIGIN}/registro-cliente`;
-
-  // Construimos query params: parentOrigin para que angular pueda postMessage al padre (this window)
-  const params = new URLSearchParams({
-    parentOrigin: window.location.origin,
-    preReservaData: encodeURIComponent(JSON.stringify(preReserva)),
-  });
-
-  const angularUrl = `${ANGULAR_BASE}?${params.toString()}`;
-
-  // Cambiar el iframe del padre para cargar Angular (este iframe lo controla el padre)
-  const angularIframe = document.getElementById("embedbook-iframe");
-  if (!angularIframe) {
-    console.error("[PARENT] embedbook-iframe no encontrado");
-    // informamos al child que no se pudo abrir
-    try { childWindow.postMessage({ type: "cancel" }, childOrigin); } catch(e){/*ignored*/ }
-    return;
-  }
-
-  // Cargamos Angular
-  angularIframe.src = angularUrl;
-
-  // Listener temporal para mensajes desde Angular (ev.origin debe ser ANGULAR_ORIGIN)
-  function onAngularMessage(ev) {
-    if (ev.origin !== ANGULAR_ORIGIN) return;
-    const data = ev.data || {};
-
-    if (data.type === "clienteData") {
-      // reenvía al iframe calendario (childWindow)
-      try {
-        childWindow.postMessage({ type: "clienteData", data: data.data }, childOrigin);
-      } catch (err) {
-        console.error("[PARENT] fallo re-enviando clienteData al child", err);
-      }
+    function cleanup() {
       window.removeEventListener("message", onAngularMessage);
-      // opcional: volver el iframe al calendario-view if quieres
-      // angularIframe.src = `${window.location.origin}/public/servicios/${preReserva.idServicio}`;
-    } else if (data.type === "cancel") {
-      try { childWindow.postMessage({ type: "cancel" }, childOrigin); } catch(e){}
-      window.removeEventListener("message", onAngularMessage);
-      // opcional: reset iframe
+      const frame = document.getElementById("embedbook-angular-iframe");
+      if (frame) frame.remove();
+      console.log("[PARENT] Limpieza completa: iframe Angular eliminado");
     }
-  }
 
-  window.addEventListener("message", onAngularMessage);
-
-  // Safety: limpiar listener si no hay respuesta en X ms
-  const CLEANUP_MS = 120000; // 2 min
-  const cleanupTimer = setTimeout(() => {
-    window.removeEventListener("message", onAngularMessage);
-    try { childWindow.postMessage({ type: "cancel" }, childOrigin); } catch(e){}
-  }, CLEANUP_MS);
-
-  // al recibir del angular o reenviar, clearTimeout
-  const origOnAngular = onAngularMessage;
-  window.addEventListener("message", function onceCleaner(ev) {
-    if (ev.origin === ANGULAR_ORIGIN && (ev.data && (ev.data.type === "clienteData" || ev.data.type === "cancel"))) {
-      clearTimeout(cleanupTimer);
-      window.removeEventListener("message", onceCleaner);
-    }
+    // Activar listener temporal
+    window.addEventListener("message", onAngularMessage);
   });
-});
 
   // =======================================================
   // I. CONFIGURACIÓN GLOBAL
@@ -264,10 +176,36 @@ window.addEventListener("message", (event) => {
     });
 
     // Ocultar el modal al hacer click en el fondo (fuera del contenido)
-    modalElement.addEventListener("click", (e) => {
-      if (e.target === modalElement) {
-        modalElement.classList.add("embedbook-hidden");
+    // Ocultar el modal al hacer click en 'X'
+    closeModalBtn.addEventListener("click", () => {
+      // Cerrar modal SÓLO si no hay un iframe Angular abierto
+      const angularOpen = !!document.getElementById("embedbook-angular-iframe");
+      if (angularOpen) {
+        // opcional: pedir confirmación antes de cerrar
+        if (!confirm("Hay un formulario abierto. ¿Deseas cerrarlo?")) return;
+        // si confirma, forzamos cleanup del iframe angular
+        const frame = document.getElementById("embedbook-angular-iframe");
+        if (frame) frame.remove();
       }
+      modalElement.classList.add("embedbook-hidden");
+    });
+
+    // Ocultar el modal al hacer click en el fondo (fuera del contenido)
+    modalElement.addEventListener("click", (e) => {
+      // Asegurarnos de que el click fue en el backdrop (no en el contenido)
+      if (e.target !== modalElement) return;
+
+      // Si hay un formulario Angular abierto, NO cerramos automáticamente.
+      if (document.getElementById("embedbook-angular-iframe")) {
+        // Evitamos cerrar el modal si Angular está en pantalla: el usuario puede usar la X.
+        // (Puedes mostrar confirmación si lo prefieres)
+        console.log(
+          "[PARENT] Click en backdrop ignorado porque Angular está abierto"
+        );
+        return;
+      }
+
+      modalElement.classList.add("embedbook-hidden");
     });
   }
 

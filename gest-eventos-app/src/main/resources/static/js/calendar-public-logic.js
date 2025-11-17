@@ -115,7 +115,12 @@ function initCalendar(config) {
         return;
       }
 
-      const clientData = await getClientDataFromForm(info.startStr, info.endStr, duracionMinutos, idServicio);
+      const clientData = await getClientDataFromForm(
+        info.startStr,
+        info.endStr,
+        duracionMinutos,
+        idServicio
+      );
 
       console.log(clientData);
 
@@ -132,7 +137,12 @@ function initCalendar(config) {
       }
 
       // Si la duración es correcta, procedemos a la reserva
-      await sendPreReservaRequest(idServicio, info.startStr, info.endStr, clientData);
+      await sendPreReservaRequest(
+        idServicio,
+        info.startStr,
+        info.endStr,
+        clientData
+      );
 
       calendar.unselect();
     },
@@ -211,26 +221,17 @@ async function loadCalendarConfiguration() {
 function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
   const PARENT_ORIGIN = window.parent === window ? window.location.origin : "*"; // si no hay parent real, fallback
   const ANGULAR_ORIGIN = "http://localhost:4200"; // para comprobaciones al recibir respuesta
+  const preReserva = {
+    startStr,
+    endStr,
+    formattedStart: formatSlotTimes(startStr, endStr).formattedStart,
+    formattedEnd: formatSlotTimes(startStr, endStr).formattedEnd,
+    duracionMinutos,
+    idServicio,
+  };
 
   return new Promise((resolve) => {
-    const preReserva = {
-      startStr,
-      endStr,
-      formattedStart: formatSlotTimes(startStr, endStr).formattedStart,
-      formattedEnd: formatSlotTimes(startStr, endStr).formattedEnd,
-      duracionMinutos,
-      idServicio,
-    };
-
-    // timeout por si no llega respuesta (mejor UX)
-    const TIMEOUT_MS = 120000; // 2 minutos
-    let timeoutId = setTimeout(() => {
-      window.removeEventListener("message", onParentMessage);
-      console.warn("[CALENDAR] timeout esperando clienteData desde padre");
-      resolve(null);
-    }, TIMEOUT_MS);
-
-    // listener para recibir la respuesta re-enviada por el padre
+    // Listener — espera respuesta del padre (que la reenvía desde Angular)
     function onParentMessage(ev) {
       // Aceptamos mensajes sólo del padre del widget (event.origin === parentOrigin)
       // No usamos '*' here; comprueba el origen real si lo conoces.
@@ -238,11 +239,9 @@ function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
       if (!msg) return;
 
       if (msg.type === "clienteData") {
-        clearTimeout(timeoutId);
         window.removeEventListener("message", onParentMessage);
         resolve(msg.data);
       } else if (msg.type === "cancel") {
-        clearTimeout(timeoutId);
         window.removeEventListener("message", onParentMessage);
         resolve(null);
       }
@@ -254,10 +253,12 @@ function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
     // IMPORTANT: targetOrigin preferible al origen conocido del padre.
     try {
       // Si conoces el origin del padre, reemplaza '*' por ese origen.
-      window.parent.postMessage({ type: "openClientForm", data: preReserva }, "*");
+      window.parent.postMessage(
+        { type: "openClientForm", data: preReserva },
+        "*"
+      );
     } catch (e) {
       console.error("[CALENDAR] error enviando openClientForm al padre", e);
-      clearTimeout(timeoutId);
       window.removeEventListener("message", onParentMessage);
       resolve(null);
     }
