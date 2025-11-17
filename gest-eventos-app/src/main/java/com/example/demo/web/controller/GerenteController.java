@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Optional;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 import com.example.demo.model.dto.GerenteDTO;
+import com.example.demo.model.dto.NegocioDTO;
+import com.example.demo.model.dto.ServicioDTO;
+import com.example.demo.repository.entity.Gerente;
 import com.example.demo.service.GerenteService;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.demo.exception.ValidationException;
@@ -26,15 +33,6 @@ public class GerenteController {
 
 	@Autowired
 	private GerenteService gerenteService;
-
-	public ModelAndView getGerenteById() {
-
-		GerenteDTO gerenteDTO = new GerenteDTO();
-		ModelAndView mav = new ModelAndView();
-		mav.addObject("gerenteDTO", gerenteDTO);
-
-		return mav;
-	}
 
 	// Lógica: Sirve la página de registro con un dto vacío para rellenar con la
 	// informacion del formulario
@@ -67,5 +65,17 @@ public class GerenteController {
 			return ResponseEntity.internalServerError().body(response);
 		}
 	}
+
+	@GetMapping("/api/gerentes/{email}/negocios")
+    public ResponseEntity<List<NegocioDTO>> getNegociosPorGerente(@PathVariable String email) {
+        GerenteDTO gerenteOpt =  null;
+		try {
+			gerenteOpt = gerenteService.findByEmail(email);
+		} catch (EntityNotFoundException e) {
+			return ResponseEntity.notFound().build();
+		}
+
+        return ResponseEntity.ok(gerenteOpt.getListaNegociosDTO());
+    }
 
 }

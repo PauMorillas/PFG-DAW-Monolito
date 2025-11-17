@@ -9,10 +9,13 @@ import java.util.Objects;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Reserva;
 import com.example.demo.repository.entity.Servicio;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.Data;
 
 @Data
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class ServicioDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;

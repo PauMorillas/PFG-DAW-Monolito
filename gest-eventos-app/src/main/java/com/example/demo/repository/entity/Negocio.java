@@ -4,6 +4,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,6 +45,7 @@ public class Negocio {
 	// Relación N:1 con Usuario (Gerente). FK: id_gerente
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_gerente", nullable = false)
+	@JsonBackReference
 	private Gerente gerente;
 
 	// Relación 1:N con Servicio. Un Negocio ofrece muchos Servicios.

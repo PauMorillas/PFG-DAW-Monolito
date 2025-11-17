@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.demo.model.Rol;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -42,7 +43,7 @@ public class Gerente {
 
 	// Relación 1:N con Negocio. Un Gerente puede serlo de varios negocios.
 	@OneToMany(mappedBy = "gerente", cascade = CascadeType.ALL, orphanRemoval = true)
-	@JsonIgnore // <--- evita que Jackson intente mapear la lista
+	@JsonManagedReference // Para evitar el error de referencias circulares con Negocio
 	private List<Negocio> listaNegocios;
 
 	// Constructor sin argumentos requerido por JPA

@@ -7,11 +7,14 @@ import java.util.Objects;
 
 import com.example.demo.model.Rol;
 import com.example.demo.repository.entity.Gerente;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.Data;
 
 @Data
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class GerenteDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -70,5 +73,4 @@ public class GerenteDTO implements Serializable {
 
 		return gerente;
 	}
-
 }
