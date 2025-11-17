@@ -1,26 +1,22 @@
 package com.example.demo.web.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.Optional;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
 import com.example.demo.model.dto.GerenteDTO;
+import com.example.demo.model.dto.LoginRequestDTO;
 import com.example.demo.model.dto.NegocioDTO;
-import com.example.demo.model.dto.ServicioDTO;
-import com.example.demo.repository.entity.Gerente;
 import com.example.demo.service.GerenteService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -66,16 +62,21 @@ public class GerenteController {
 		}
 	}
 
+	@PostMapping("/api/gerentes/login")
+	public ResponseEntity<?> login(@RequestBody LoginRequestDTO req) {
+		gerenteService.login(req.getEmail(), req.getPassword());
+	}
+
 	@GetMapping("/api/gerentes/{email}/negocios")
-    public ResponseEntity<List<NegocioDTO>> getNegociosPorGerente(@PathVariable String email) {
-        GerenteDTO gerenteOpt =  null;
+	public ResponseEntity<List<NegocioDTO>> getNegociosPorGerente(@PathVariable String email) {
+		GerenteDTO gerenteOpt = null;
 		try {
 			gerenteOpt = gerenteService.findByEmail(email);
 		} catch (EntityNotFoundException e) {
 			return ResponseEntity.notFound().build();
 		}
 
-        return ResponseEntity.ok(gerenteOpt.getListaNegociosDTO());
-    }
+		return ResponseEntity.ok(gerenteOpt.getListaNegociosDTO());
+	}
 
 }

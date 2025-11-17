@@ -31,5 +31,4 @@ public class GerenteDetailsServiceImpl implements UserDetailsService {
 				.roles("GESTOR")
 				.build();
 	}
-
 }

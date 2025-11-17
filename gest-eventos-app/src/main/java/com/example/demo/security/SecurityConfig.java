@@ -30,10 +30,7 @@ public class SecurityConfig {
 	@Value("${api.secret}")
 	private final String apiToken;
 
-	private final DominioService dominioService;
-
 	public SecurityConfig(@Lazy DominioService dominioService, @Value("${api.secret}") String apiToken) {
-		this.dominioService = dominioService;
 		this.apiToken = apiToken;
 	}
 
@@ -85,8 +82,8 @@ public class SecurityConfig {
 				)
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(
-								"/api/clientes/**",
-								"/api/gerentes/**",
+								"/api/clientes/registro",
+								"/api/gerentes/registro",
 								"/public/**",
 								"/register",
 								"/public/api/calendario/**",
