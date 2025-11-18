@@ -26,6 +26,7 @@ public class NegocioDTO implements Serializable {
 	private String telfContacto;
 	private String horaApertura; // Formato HH:MM
 	private String horaCierre; // Formato HH:MM
+	private String correoGerente; // Correo del Gerente que vendrá desde Angular
 	private GerenteDTO gerenteDTO;
 	private List<ServicioDTO> listaServiciosDTO;
 

@@ -35,11 +35,14 @@ public class NegocioController {
     }
 
     // Crear nuevo negocio
-    @PostMapping("path")
-    public String postMethodName(@RequestBody String entity) {
-        // TODO: process POST request
-
-        return entity;
+    @PostMapping("/create")
+    public ResponseEntity<?> postMethodName(@RequestBody NegocioDTO negocioDTO) {
+        try {
+            negocioService.save(negocioDTO);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @DeleteMapping("/{id}")

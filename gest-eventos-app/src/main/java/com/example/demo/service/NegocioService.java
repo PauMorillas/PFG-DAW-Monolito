@@ -7,5 +7,7 @@ public interface NegocioService {
     NegocioDTO findById(Long id);
 
     void deleteById(Long id);
+
+    void save(NegocioDTO negocioDTO);
     
 }
