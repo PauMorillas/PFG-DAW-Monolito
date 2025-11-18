@@ -13,6 +13,9 @@ INSERT INTO gerente (nombre, correo_elec, pass_hash, telf, rol) VALUES
 ('Juan Pérez', 'juan.perez@gestor.com', @PASSWORD_HASH, '600111222', 'GERENTE'),
 ('Laura Gómez', 'laura.gomez@gestor.com', @PASSWORD_HASH, '600333444', 'GERENTE'),
 ('Carlos Ruiz', 'carlos.ruiz@gestor.com', @PASSWORD_HASH, '600555666', 'GERENTE');
+INSERT INTO `gerente` (`id`, `nombre`, `correo_elec`, `pass_hash`, `telf`, `rol`)
+VALUES
+	('4', 'Manolito', 'morillashuertapau@gmail.com', '$2a$10$SGTiOsMK1dL.4uQ9LfkDHu51xf7p2Ow0jbZdnHYien8T7smLOmDWG', '666999666', 'GERENTE');
 
 -- 2. INSERTAR NEGOCIOS
 -- ====================================================================
@@ -42,6 +45,36 @@ INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cie
     '14:00:00', 
     3 -- Gerente: Carlos Ruiz
 );
+
+-- ====================================================================
+-- NEGOCIOS DE PRUEBA PARA morillashuertapau@gmail.com
+-- ====================================================================
+
+-- Asumiendo que el gerente ya existe con id = 4
+-- Contraseña ya definida: pass123
+
+-- 1. INSERTAR NEGOCIOS
+INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) 
+VALUES ('Cafetería La Buena Onda', 'contacto@buenaonda.com', '611123456', '08:00:00', '20:00:00', 4);
+
+SET @ID_NEGOCIO_1 = LAST_INSERT_ID();
+
+-- 2. INSERTAR SERVICIOS PARA CADA NEGOCIO
+-- Servicios de 'Cafetería La Buena Onda' (id_negocio = último insert id o 5 si seguimos la secuencia)
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
+('Café Especial', 'Preparación de café gourmet.', 'Barra 1', 15, @ID_NEGOCIO_1),
+('Desayuno Completo', 'Tostadas, huevos y café.', 'Mesa 3', 45, @ID_NEGOCIO_1);
+
+INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) 
+VALUES ('Academia de Yoga Zen', 'contacto@yogazen.com', '611234567', '07:00:00', '22:00:00', 4);
+
+SET @ID_NEGOCIO_2 = LAST_INSERT_ID();
+
+-- Servicios de 'Academia de Yoga Zen' (id_negocio = 6)
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
+('Clase de Yoga Principiantes', 'Sesión introductoria para nuevos alumnos.', 'Sala A', 60, @ID_NEGOCIO_2),
+('Clase Avanzada', 'Yoga avanzado con posturas desafiantes.', 'Sala B', 75, @ID_NEGOCIO_2),
+('Meditación Guiada', '30 minutos de meditación para relajación total.', 'Sala C', 30, @ID_NEGOCIO_2);
 
 
 -- 3. INSERTAR SERVICIOS (Plantillas)

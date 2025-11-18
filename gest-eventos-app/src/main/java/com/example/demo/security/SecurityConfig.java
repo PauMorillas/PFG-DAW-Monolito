@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -75,15 +74,15 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-				.cors() // Usará automáticamente el CorsConfigurationSource del CorsConfig
+				.cors()
 				.and()
 				.headers(headers -> headers
 						.frameOptions(frameOptions -> frameOptions.disable()) // No bloquear iframes
 				)
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(
-								"/api/clientes/registro",
-								"/api/gerentes/registro",
+								"/api/clientes/**",
+								"/api/gerentes/**",
 								"/public/**",
 								"/register",
 								"/public/api/calendario/**",
@@ -93,17 +92,15 @@ public class SecurityConfig {
 								"/js/**",
 								"/login",
 								"/error",
-								"/favicon.ico")
+								"/favicon.ico",
+								"/api/negocios/**")
 						.permitAll()
 						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
 						.anyRequest().authenticated())
-				.formLogin(form -> form
-						.loginPage("/login")
-						.defaultSuccessUrl("/home", true)
-						.permitAll())
-				.logout(logout -> logout.permitAll())
+				.formLogin().disable() // Desactiva la autenticación de spring
+				.logout().disable() // Desactiva el logout automatico de spring
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**"));
+						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();

@@ -16,6 +16,7 @@ import java.util.List;
 
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.LoginRequestDTO;
+import com.example.demo.model.dto.LoginResponseDTO;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.service.GerenteService;
 
@@ -64,7 +65,20 @@ public class GerenteController {
 
 	@PostMapping("/api/gerentes/login")
 	public ResponseEntity<?> login(@RequestBody LoginRequestDTO req) {
-		gerenteService.login(req.getEmail(), req.getPassword());
+		try {
+			LoginResponseDTO loginRespDTO = gerenteService.login(req);
+			return ResponseEntity.ok(loginRespDTO);
+		} catch (EntityNotFoundException ex) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", false);
+			response.put("message", ex.getMessage());
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+		} catch (Exception ex) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", false);
+			response.put("message", "Error interno del servidor: " + ex.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
 
 	@GetMapping("/api/gerentes/{email}/negocios")

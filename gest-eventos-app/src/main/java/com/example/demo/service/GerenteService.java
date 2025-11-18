@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.model.dto.GerenteDTO;
+import com.example.demo.model.dto.LoginRequestDTO;
 import com.example.demo.model.dto.LoginResponseDTO;
 
 public interface GerenteService {
@@ -8,5 +9,5 @@ public interface GerenteService {
 
 	GerenteDTO findByEmail(String email);
 
-    LoginResponseDTO login(String email, String password);
+    LoginResponseDTO login(LoginRequestDTO req);
 }

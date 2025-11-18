@@ -53,8 +53,6 @@ public class CspFilter extends OncePerRequestFilter {
                 "script-src " + scriptSrc + "; " +
                 "font-src 'self' https://cdn.jsdelivr.net data:;";
 
-        log.info("Políticas generadas: " + csp);
-
         // Añade la cabecera CSP a la respuesta
         response.setHeader("Content-Security-Policy", csp);
 

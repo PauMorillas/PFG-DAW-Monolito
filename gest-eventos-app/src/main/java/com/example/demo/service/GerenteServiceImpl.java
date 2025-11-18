@@ -5,21 +5,22 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.swing.text.html.parser.Entity;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.exception.ValidationException;
 import com.example.demo.model.dto.GerenteDTO;
+import com.example.demo.model.dto.LoginRequestDTO;
+import com.example.demo.model.dto.LoginResponseDTO;
 import com.example.demo.model.dto.NegocioDTO;
-import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.entity.Gerente;
-import com.example.demo.repository.entity.Negocio;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.java.Log;
 
 @Service
 public class GerenteServiceImpl implements GerenteService {
@@ -30,7 +31,7 @@ public class GerenteServiceImpl implements GerenteService {
 	private GerenteRepository gerenteRepository;
 
 	@Autowired
-	private PasswordEncoder passwordEncoder;
+	private PasswordEncoder passwordEncoder;		
 
 	@Override
 	public void save(GerenteDTO gerenteDTO) {
@@ -98,5 +99,16 @@ public class GerenteServiceImpl implements GerenteService {
 		gerenteDTO.setListaNegociosDTO(listaNegociosDTO);
 
 		return gerenteDTO;
+	}
+
+	@Override
+	public LoginResponseDTO login(LoginRequestDTO req) {
+		Gerente gerente = gerenteRepository.findByEmail(req.getEmail())
+				.orElseThrow(() -> new EntityNotFoundException("El correo o la contraseña son incorrectos."));
+		if (passwordEncoder.matches(req.getPassword(), gerente.getPass())) {
+			return new LoginResponseDTO(gerente.getEmail(), gerente.getRol());
+		} else {
+        	throw new EntityNotFoundException("El correo o la contraseña son incorrectos.");
+		}
 	}
 }
