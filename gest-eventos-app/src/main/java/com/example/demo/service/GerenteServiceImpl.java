@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +19,13 @@ import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.entity.Gerente;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.extern.java.Log;
 
 @Service
 public class GerenteServiceImpl implements GerenteService {
 	// RegEx para validar teléfono español (9 dígitos, empieza por 6 o 7)
 	private static final Pattern PHONE_PATTERN = Pattern.compile("^[67]\\d{8}$");
+
+	private static final Pattern PASS_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\\\d)[A-Za-z\\\\d]{8,}$");
 
 	@Autowired
 	private GerenteRepository gerenteRepository;
@@ -58,9 +58,13 @@ public class GerenteServiceImpl implements GerenteService {
 		}
 
 		// Validación 2: Contraseña no vacía y longitud mínima
-		if (gerenteDTO.getPass() == null || gerenteDTO.getPass().trim().length() < 6) {
+		if (gerenteDTO.getPass() == null || gerenteDTO.getPass().trim().length() < 8) {
 			valido = false;
-			throw new ValidationException("La contraseña debe tener al menos 6 caracteres.");
+			throw new ValidationException("La contraseña debe tener al menos 8 caracteres.");
+		}
+
+		if (!PASS_PATTERN.matcher(gerenteDTO.getPass()).matches()) {
+			throw new ValidationException("La contraseña debe tener al menos una letra y un número.");
 		}
 
 		// Validación 3: Teléfono no nulo

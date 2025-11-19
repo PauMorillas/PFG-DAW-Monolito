@@ -3,11 +3,14 @@ package com.example.demo.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.NegocioDTO;
+import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.dao.NegocioRepository;
 import com.example.demo.repository.entity.Gerente;
@@ -27,11 +30,20 @@ public class NegocioServiceImpl implements NegocioService {
 
     @Override
     public NegocioDTO findById(Long id) {
-        // TODO: De momento no se manejan servicios, por implementar
-        return NegocioDTO.convertToDTO(
-                negocioRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Negocio no encontrado")),
-                null,
-                null);
+        Negocio negocio = negocioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Negocio no encontrado"));
+
+        // Convertimos el gerente a DTO (solo datos básicos, sin lista de negocios)
+        GerenteDTO gerenteDTO = GerenteDTO.convertToDTO(negocio.getGerente());
+        
+        // Mapear la lista de servicios del negocio
+        List<ServicioDTO> listaServiciosDTO = new ArrayList<>();
+        listaServiciosDTO = negocio.getListaServicios().stream()
+                .map(servicio -> ServicioDTO.convertToDTO(servicio, null, null))
+                .collect(Collectors.toList());
+
+        // Devolvemos el DTO final con la lista de servicios mapeada
+        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO);
     }
 
     @Override
