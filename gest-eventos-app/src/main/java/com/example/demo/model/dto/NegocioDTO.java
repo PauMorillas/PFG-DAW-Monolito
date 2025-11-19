@@ -63,7 +63,7 @@ public class NegocioDTO implements Serializable {
 		dto.setTelfContacto(negocio.getTelfContacto());
 		dto.setHoraApertura(negocio.getHoraApertura().format(formatter));
 		dto.setHoraCierre(negocio.getHoraCierre().format(formatter));
-
+		
 		// Asignación de dependencias (relaciones N:1 y 1:N)
 		dto.setGerenteDTO(gerenteDTO);
 		dto.setListaServiciosDTO(listaServiciosDTO);

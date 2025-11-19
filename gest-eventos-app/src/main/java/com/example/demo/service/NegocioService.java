@@ -9,5 +9,7 @@ public interface NegocioService {
     void deleteById(Long id);
 
     void save(NegocioDTO negocioDTO);
+
+    void update(NegocioDTO negocioDTO);
     
 }

@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,15 @@ public class NegocioServiceImpl implements NegocioService {
 
         Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, servicios);
 
+        negocioRepository.save(negocio);
+    }
+
+    @Override
+    public void update(NegocioDTO negocioDTO) {
+        Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
+        negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+
+        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, negocioOpt.get().getGerente(), null);
         negocioRepository.save(negocio);
     }
 }
