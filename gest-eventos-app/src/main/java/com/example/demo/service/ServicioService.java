@@ -11,7 +11,7 @@ import com.example.demo.model.dto.ServicioDTO;
 public interface ServicioService {
 	List<ServicioDTO> getServiciosByNegocio(Long idNegocio);
 
-	ServicioDTO findServicioById(Long idServicio);
+	ServicioDTO findById(Long idServicio);
 
 	ServicioConfigDTO getConfigReserva(Long idServicio);
 

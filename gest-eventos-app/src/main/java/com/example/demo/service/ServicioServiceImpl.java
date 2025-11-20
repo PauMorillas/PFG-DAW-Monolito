@@ -17,6 +17,8 @@ import com.example.demo.repository.dao.ServicioRepository;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Servicio;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class ServicioServiceImpl implements ServicioService {
 	@Autowired
@@ -58,11 +60,11 @@ public class ServicioServiceImpl implements ServicioService {
 	}
 
 	@Override
-	public ServicioDTO findServicioById(Long idServicio) {
+	public ServicioDTO findById(Long idServicio) {
 
 		// 1. Obtener la entidad Servicio o lanzar una excepción de no encontrado
 		Servicio servicio = servicioRepository.findById(idServicio)
-				.orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + idServicio));
+				.orElseThrow(() -> new EntityNotFoundException("Servicio no encontrado con ID: " + idServicio));
 
 		// 2. Obtener el Negocio asociado
 		// Ya que la entidad Servicio tiene el Negocio como campo podemos hacer
@@ -78,7 +80,7 @@ public class ServicioServiceImpl implements ServicioService {
 	public ServicioConfigDTO getConfigReserva(Long idServicio) {
 		// 1. Obtener la información completa del servicio (incluyendo el Negocio
 		// asociado)
-		ServicioDTO servicioDTO = this.findServicioById(idServicio);
+		ServicioDTO servicioDTO = this.findById(idServicio);
 
 		// TODO: 2. Comprobar la activación (Validación de Negocio)
 		// Es CRUCIAL que el servicio esté activo para permitir reservas.

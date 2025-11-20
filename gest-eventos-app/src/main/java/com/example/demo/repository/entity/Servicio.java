@@ -1,5 +1,6 @@
 package com.example.demo.repository.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,9 @@ public class Servicio {
 	@Column(name = "duracion_min", nullable = false)
 	private int duracionMinutos;
 
+	@Column(name = "coste", nullable = false, precision = 10, scale = 2)
+    private BigDecimal coste = BigDecimal.ZERO;
+	
 	// Relación N:1 con Negocio. FK: id_negocio
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_negocio", nullable = false)

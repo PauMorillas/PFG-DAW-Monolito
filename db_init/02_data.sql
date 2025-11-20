@@ -61,9 +61,9 @@ SET @ID_NEGOCIO_1 = LAST_INSERT_ID();
 
 -- 2. INSERTAR SERVICIOS PARA CADA NEGOCIO
 -- Servicios de 'Cafetería La Buena Onda' (id_negocio = último insert id o 5 si seguimos la secuencia)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
-('Café Especial', 'Preparación de café gourmet.', 'Barra 1', 15, @ID_NEGOCIO_1),
-('Desayuno Completo', 'Tostadas, huevos y café.', 'Mesa 3', 45, @ID_NEGOCIO_1);
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
+('Café Especial', 'Preparación de café gourmet.', 'Barra 1', 15, 1.50, @ID_NEGOCIO_1),
+('Desayuno Completo', 'Tostadas, huevos y café.', 'Mesa 3', 45, 5.50, @ID_NEGOCIO_1);
 
 INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) 
 VALUES ('Academia de Yoga Zen', 'contacto@yogazen.com', '611234567', '07:00:00', '22:00:00', 4);
@@ -71,28 +71,28 @@ VALUES ('Academia de Yoga Zen', 'contacto@yogazen.com', '611234567', '07:00:00',
 SET @ID_NEGOCIO_2 = LAST_INSERT_ID();
 
 -- Servicios de 'Academia de Yoga Zen' (id_negocio = 6)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
-('Clase de Yoga Principiantes', 'Sesión introductoria para nuevos alumnos.', 'Sala A', 60, @ID_NEGOCIO_2),
-('Clase Avanzada', 'Yoga avanzado con posturas desafiantes.', 'Sala B', 75, @ID_NEGOCIO_2),
-('Meditación Guiada', '30 minutos de meditación para relajación total.', 'Sala C', 30, @ID_NEGOCIO_2);
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
+('Clase de Yoga Principiantes', 'Sesión introductoria para nuevos alumnos.', 'Sala A', 60, 10.00, @ID_NEGOCIO_2),
+('Clase Avanzada', 'Yoga avanzado con posturas desafiantes.', 'Sala B', 75, 25.00, @ID_NEGOCIO_2),
+('Meditación Guiada', '30 minutos de meditación para relajación total.', 'Sala C', 30, 35.00, @ID_NEGOCIO_2);
 
 
 -- 3. INSERTAR SERVICIOS (Plantillas)
 -- ====================================================================
 -- Servicios de 'Corte y Estilo Premium' (id_negocio=1)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
-('Corte Caballero', 'Corte y lavado básico.', 'Sillón 1', 30, 1),
-('Tinte Completo', 'Aplicación de tinte y secado.', 'Sillón 3', 90, 1),
-('Peinado Dama', 'Peinado para evento.', 'Sillón 2', 45, 1);
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
+('Corte Caballero', 'Corte y lavado básico.', 'Sillón 1', 30, 10.00, 1),
+('Tinte Completo', 'Aplicación de tinte y secado.', 'Sillón 3', 90, 25.00, 1),
+('Peinado Dama', 'Peinado para evento.', 'Sillón 2', 45, 20.00, 1);
 
 -- Servicios de 'Mecánica Rápida Express' (id_negocio=2)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
-('Cambio de Aceite', 'Aceite y filtros estándar.', 'Box 1', 60, 2),
-('Revisión Pre-ITV', 'Chequeo completo de seguridad.', 'Box 2', 120, 2);
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
+('Cambio de Aceite', 'Aceite y filtros estándar.', 'Box 1', 60, 60.00, 2),
+('Revisión Pre-ITV', 'Chequeo completo de seguridad.', 'Box 2', 120, 120.00, 2);
 
 -- Servicios de 'Clínica Dental Sonrisa' (id_negocio=3)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, id_negocio) VALUES
-('Revisión Anual', 'Consulta y limpieza simple.', 'Consulta 1', 45, 3);
+INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
+('Revisión Anual', 'Consulta y limpieza simple.', 'Consulta 1', 45, 150.00, 3);
 
 -- 4. INSERTAR CLIENTES
 -- ====================================================================

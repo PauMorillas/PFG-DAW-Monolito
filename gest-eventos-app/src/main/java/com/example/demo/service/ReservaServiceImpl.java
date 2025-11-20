@@ -137,7 +137,7 @@ public class ReservaServiceImpl implements ReservaService {
 		// Obtenemos la entidad Cliente persistida
 		ClienteDTO clienteDTO = clienteService.findOrCreate(tempDto);
 		// 3. OBTENER EL SERVICIODTO
-		ServicioDTO servicioDTO = servicioService.findServicioById(preReserva.getIdServicio());
+		ServicioDTO servicioDTO = servicioService.findById(preReserva.getIdServicio());
 
 		Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
 		Servicio servicio = ServicioDTO.convertToEntity(servicioDTO, null, null);

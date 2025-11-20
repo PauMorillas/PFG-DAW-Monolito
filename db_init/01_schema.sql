@@ -64,6 +64,7 @@ CREATE TABLE servicio(
     titulo VARCHAR(75) NOT NULL,
     descripcion VARCHAR(125),
     ubicacion VARCHAR(125),
+    coste DECIMAL(10,2) NOT NULL DEFAULT 0.00, -- Por defecto 0.00 (Gratis)
     
     fecha_creacion DATETIME DEFAULT NOW(),
     duracion_min INT NOT NULL, -- Duración estándar del servicio en minutos.

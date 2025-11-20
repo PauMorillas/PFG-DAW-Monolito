@@ -1,87 +1,113 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Servicios Disponibles</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
-          rel="stylesheet" 
-          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
-          crossorigin="anonymous">
-    
-    <style>
-        .card-servicio {
-            transition: transform 0.2s;
-            cursor: pointer;
-        }
-        .card-servicio:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-    </style>
-</head>
-<body>
 
-<div class="container my-5">
-    
-    <div class="row mb-4">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+
+    <style>
+      .card-servicio {
+        transition: transform 0.2s;
+        cursor: pointer;
+      }
+      .card-servicio:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container my-5">
+      <div class="row mb-4">
         <div class="col">
-            <h1 class="display-5">Servicios de 
-                <span th:if="${!serviciosDTO.isEmpty()}" 
-                      th:text="${serviciosDTO.get(0).negocioDTO.nombre}" 
-                      class="text-primary">Nombre del Negocio</span>
-                <span th:if="${serviciosDTO.isEmpty()}" class="text-primary">Negocio</span>
-            </h1>
-            <p class="lead">Explora y reserva nuestros servicios disponibles.</p>
-            <hr>
+          <h1 class="display-5">
+            Servicios de
+            <span
+              th:if="${!serviciosDTO.isEmpty()}"
+              th:text="${serviciosDTO.get(0).negocioDTO.nombre}"
+              class="text-primary"
+              >Nombre del Negocio</span
+            >
+            <span th:if="${serviciosDTO.isEmpty()}" class="text-primary"
+              >Negocio</span
+            >
+          </h1>
+          <p class="lead">Explora y reserva nuestros servicios disponibles.</p>
+          <hr />
         </div>
-    </div>
-    
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        
+      </div>
+
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <div th:if="${serviciosDTO.isEmpty()}" class="col-12">
-            <div class="alert alert-info" role="alert">
-                Lo sentimos, este negocio no tiene servicios activos en este momento.
-            </div>
+          <div class="alert alert-info" role="alert">
+            Lo sentimos, este negocio no tiene servicios activos en este
+            momento.
+          </div>
         </div>
 
         <div th:each="servicio : ${serviciosDTO}" class="col">
-            <div class="card h-100 card-servicio">
-                
-                <div class="card-body">
-                    <h5 class="card-title text-success" th:text="${servicio.titulo}">Título del Servicio</h5>
-                    <p class="card-text" th:text="${servicio.descripcion}">Descripción corta del servicio.</p>
-                </div>
-
-                <div class="card-footer bg-light">
-                    <ul class="list-unstyled mb-2 small">
-                        <li>
-                            <i class="bi bi-clock"></i> 
-                            Duración: 
-                            <span class="fw-bold" th:text="|${servicio.duracionMinutos} min|">60 minutos</span>
-                        </li>
-                        <li>
-                            <i class="bi bi-geo-alt"></i> 
-                            Ubicación: 
-                            <span th:text="${servicio.ubicacion}">Ubicación / Sala</span>
-                        </li>
-                    </ul>
-                    
-                    <a th:href="@{/public/calendario/{id}(id=${servicio.id})}" 
-                       class="btn btn-primary btn-sm w-100 mt-2">
-                       Reservar Cita
-                    </a>
-                </div>
+          <div class="card h-100 card-servicio">
+            <div class="card-body">
+              <h5 class="card-title text-success" th:text="${servicio.titulo}">
+                Título del Servicio
+              </h5>
+              <p class="card-text" th:text="${servicio.descripcion}">
+                Descripción corta del servicio.
+              </p>
             </div>
-        </div>
 
+            <div class="card-footer bg-light">
+              <ul class="list-unstyled mb-2 small">
+                <li>
+                  <i class="bi bi-clock"></i>
+                  Duración:
+                  <span
+                    class="fw-bold"
+                    th:text="|${servicio.duracionMinutos} min|"
+                    >60 minutos</span
+                  >
+                </li>
+                <li>
+                  <i class="bi bi-tag"></i>
+                  Precio:
+                  <span
+                    th:text="${#numbers.formatDecimal(servicio.coste, 2, 2, 'COMMA')} + ' €'"
+                  ></span>
+                </li>
+                <li>
+                  <i class="bi bi-geo-alt"></i>
+                  Ubicación:
+                  <span th:text="${servicio.ubicacion}">Ubicación / Sala</span>
+                </li>
+              </ul>
+
+              <a
+                th:href="@{/public/calendario/{id}(id=${servicio.id})}"
+                class="btn btn-primary btn-sm w-100 mt-2"
+              >
+                Reservar Cita
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
-        crossorigin="anonymous"></script>
-</body>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+  </body>
 </html>
