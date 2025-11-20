@@ -134,8 +134,13 @@ public class ServicioServiceImpl implements ServicioService {
 
 	@Override
 	public void save(ServicioDTO servicioDTO) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'save'");
+		Optional<Negocio> negocio = negocioRepository.findById(servicioDTO.getNegocioDTO().getId());
+		if (negocio.isPresent()) {
+			// TODO: Validar info del servicio en el backend antes de guardar
+			servicioRepository.save(ServicioDTO.convertToEntity(servicioDTO, negocio.get(), new ArrayList<>()));
+		} else {
+			throw new EntityNotFoundException("Negocio no encontrado con ID: " + servicioDTO.getNegocioDTO().getId());
+		}
 	}
 
 }
