@@ -101,7 +101,7 @@ public class SecurityConfig {
 				.formLogin().disable() // Desactiva la autenticación de spring
 				.logout().disable() // Desactiva el logout automatico de spring
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**"));
+						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**", "/api/servicios/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();

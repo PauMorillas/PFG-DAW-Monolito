@@ -15,5 +15,9 @@ public interface ServicioService {
 
 	ServicioConfigDTO getConfigReserva(Long idServicio);
 
-	// TODO: métodos CRUD básicos (guardar, actualizar, eliminar)
+	void update(ServicioDTO servicioDTO);
+
+	void delete(Long idServicio);
+
+	void save(ServicioDTO servicioDTO);
 }

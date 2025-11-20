@@ -68,7 +68,7 @@ public class NegocioServiceImpl implements NegocioService {
         Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
         negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
 
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, negocioOpt.get().getGerente(), null);
+        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, negocioOpt.get().getGerente(), negocioOpt.get().getListaServicios());
         negocioRepository.save(negocio);
     }
 }

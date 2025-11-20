@@ -50,82 +50,73 @@ INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cie
 -- NEGOCIOS DE PRUEBA PARA morillashuertapau@gmail.com
 -- ====================================================================
 
--- Asumiendo que el gerente ya existe con id = 4
--- Contraseña ya definida: pass123
-
 -- 1. INSERTAR NEGOCIOS
 INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) 
 VALUES ('Cafetería La Buena Onda', 'contacto@buenaonda.com', '611123456', '08:00:00', '20:00:00', 4);
-
 SET @ID_NEGOCIO_1 = LAST_INSERT_ID();
 
--- 2. INSERTAR SERVICIOS PARA CADA NEGOCIO
--- Servicios de 'Cafetería La Buena Onda' (id_negocio = último insert id o 5 si seguimos la secuencia)
+-- Servicios de 'Cafetería La Buena Onda'
 INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
 ('Café Especial', 'Preparación de café gourmet.', 'Barra 1', 15, 1.50, @ID_NEGOCIO_1),
 ('Desayuno Completo', 'Tostadas, huevos y café.', 'Mesa 3', 45, 5.50, @ID_NEGOCIO_1);
 
+-- 2. Insertar Academia de Yoga Zen
 INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) 
 VALUES ('Academia de Yoga Zen', 'contacto@yogazen.com', '611234567', '07:00:00', '22:00:00', 4);
-
 SET @ID_NEGOCIO_2 = LAST_INSERT_ID();
 
--- Servicios de 'Academia de Yoga Zen' (id_negocio = 6)
+-- Servicios de 'Academia de Yoga Zen'
 INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
 ('Clase de Yoga Principiantes', 'Sesión introductoria para nuevos alumnos.', 'Sala A', 60, 10.00, @ID_NEGOCIO_2),
 ('Clase Avanzada', 'Yoga avanzado con posturas desafiantes.', 'Sala B', 75, 25.00, @ID_NEGOCIO_2),
 ('Meditación Guiada', '30 minutos de meditación para relajación total.', 'Sala C', 30, 35.00, @ID_NEGOCIO_2);
 
-
--- 3. INSERTAR SERVICIOS (Plantillas)
--- ====================================================================
--- Servicios de 'Corte y Estilo Premium' (id_negocio=1)
+-- 3. Servicios de 'Mecánica Rápida Express'
 INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
-('Corte Caballero', 'Corte y lavado básico.', 'Sillón 1', 30, 10.00, 1),
-('Tinte Completo', 'Aplicación de tinte y secado.', 'Sillón 3', 90, 25.00, 1),
-('Peinado Dama', 'Peinado para evento.', 'Sillón 2', 45, 20.00, 1);
+('Cambio de Aceite', 'Aceite y filtros estándar.', 'Box 1', 60, 60.00, 2);
+SET @ID_SERVICIO_ACEITE = LAST_INSERT_ID();
 
--- Servicios de 'Mecánica Rápida Express' (id_negocio=2)
 INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
-('Cambio de Aceite', 'Aceite y filtros estándar.', 'Box 1', 60, 60.00, 2),
 ('Revisión Pre-ITV', 'Chequeo completo de seguridad.', 'Box 2', 120, 120.00, 2);
+SET @ID_SERVICIO_ITV = LAST_INSERT_ID();
 
--- Servicios de 'Clínica Dental Sonrisa' (id_negocio=3)
-INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_negocio) VALUES
-('Revisión Anual', 'Consulta y limpieza simple.', 'Consulta 1', 45, 150.00, 3);
-
+-- ====================================================================
 -- 4. INSERTAR CLIENTES
 -- ====================================================================
-INSERT INTO cliente (nombre, correo_elec, telf, rol) VALUES
-('Marta Torres', 'marta@cliente.es', '611000111', 'CLIENTE'),
-('Alberto Vidal', 'alberto@cliente.es', '611222333', 'CLIENTE'),
-('Sofía Ramos', 'sofia@cliente.es', '611444555', 'CLIENTE');
+INSERT INTO cliente (nombre, correo_elec, pass_hash, telf, rol) VALUES
+('Marta Torres', 'marta@cliente.es', @PASSWORD_HASH, '611000111', 'CLIENTE');
+SET @ID_CLIENTE_1 = LAST_INSERT_ID();
 
--- 5. INSERTAR RESERVAS (Citas)
+INSERT INTO cliente (nombre, correo_elec, pass_hash, telf, rol) VALUES
+('Alberto Vidal', 'alberto@cliente.es', @PASSWORD_HASH, '611222333', 'CLIENTE');
+SET @ID_CLIENTE_2 = LAST_INSERT_ID();
+
+INSERT INTO cliente (nombre, correo_elec, pass_hash, telf, rol) VALUES
+('Sofía Ramos', 'sofia@cliente.es', @PASSWORD_HASH, '611444555', 'CLIENTE');
+SET @ID_CLIENTE_3 = LAST_INSERT_ID();
+
 -- ====================================================================
--- Lunes 10/11/2025
--- Servicio 4 (Cambio de Aceite, 60min)
-INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-10 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', 1, 4), -- Cliente Marta, 09:00 - 10:00
-('2025-11-10 10:30:00', '2025-10-10 11:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 10:30 - 11:30
+-- 5. INSERTAR RESERVAS (Citas) usando variables de cliente y servicio
+-- ====================================================================
 
--- Martes 11/11/2025
--- Servicio 5 (Revisión Pre-ITV, 120min)
+-- Lunes 10/11/2025 - Servicio Cambio de Aceite
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-11 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', 3, 5); -- Cliente Sofía, 15:00 - 17:00 (Ocupa las últimas 2h)
+('2025-11-10 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ACEITE),
+('2025-11-10 10:30:00', '2025-11-10 11:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
 
--- Miércoles 12/11/2025
--- Servicio 4 (Cambio de Aceite, 60min)
+-- Martes 11/11/2025 - Servicio Revisión Pre-ITV
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-12 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 11:30 - 12:30
+('2025-11-11 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ITV);
 
--- Jueves 13/11/2025
--- Servicio 5 (Revisión Pre-ITV, 120min) - Estado 'INACTIVA' para variar
+-- Miércoles 12/11/2025 - Servicio Cambio de Aceite
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', 1, 5); -- Cliente Marta, 08:30 - 10:30
+('2025-11-12 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
 
--- Viernes 14/11/2025
--- Servicio 4 (Cambio de Aceite, 60min)
+-- Jueves 13/11/2025 - Servicio Revisión Pre-ITV (INACTIVA)
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-14 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', 3, 4), -- Cliente Sofía, 10:00 - 11:00
-('2025-11-14 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', 2, 4); -- Cliente Alberto, 16:30 - 17:30 (Reserva justo antes del cierre)
+('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ITV);
+
+-- Viernes 14/11/2025 - Servicio Cambio de Aceite
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-14 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ACEITE),
+('2025-11-14 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);

@@ -10,8 +10,13 @@ import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.service.ServicioService;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 
 @RestController
+@RequestMapping("/api/servicios")
 public class ServicioController {
 
 	@Autowired
@@ -19,11 +24,24 @@ public class ServicioController {
 
 	// TODO: CRUD DE LOS SERVICIOS (DASHBOARD DE LOS Gerentes)
 
-	@GetMapping("/api/servicios/{idServicio}")
+	@GetMapping("/{idServicio}")
 	public ResponseEntity<ServicioDTO> findById(@PathVariable Long idServicio) {
 		try {
 			ServicioDTO servicioDTO = servicioService.findById(idServicio);
 			return ResponseEntity.ok(servicioDTO);
+		} catch (EntityNotFoundException e) {
+			return ResponseEntity.notFound().build();
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
+	}
+
+	@PutMapping("/{idServicio}")
+	public ResponseEntity<ServicioDTO> update(@PathVariable Long idServicio, @RequestBody ServicioDTO servicioDTO) {
+		try {
+			System.out.println("servicioDTO: " + servicioDTO);
+			servicioService.update(servicioDTO);
+			return ResponseEntity.ok().build();
 		} catch (EntityNotFoundException e) {
 			return ResponseEntity.notFound().build();
 		} catch (Exception e) {

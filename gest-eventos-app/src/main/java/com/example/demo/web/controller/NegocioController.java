@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.model.dto.NegocioDTO;
+import com.example.demo.repository.entity.Negocio;
 import com.example.demo.service.NegocioService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -37,7 +38,7 @@ public class NegocioController {
 
     // Crear nuevo negocio
     @PostMapping("/create")
-    public ResponseEntity<?> postMethodName(@RequestBody NegocioDTO negocioDTO) {
+    public ResponseEntity<NegocioDTO> postMethodName(@RequestBody NegocioDTO negocioDTO) {
         try {
             negocioService.save(negocioDTO);
             return ResponseEntity.ok().build();
