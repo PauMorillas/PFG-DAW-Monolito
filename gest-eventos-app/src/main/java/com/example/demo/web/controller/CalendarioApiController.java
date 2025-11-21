@@ -28,8 +28,13 @@ public class CalendarioApiController {
 	 * 
 	 */
 	@GetMapping("/eventos/{idServicio}")
-	public List<EventoCalendarioDTO> getEventos(@PathVariable Long idServicio) {
+	public List<EventoCalendarioDTO> getEventosByServicioId(@PathVariable Long idServicio) {
 		return reservaService.getReservasByServicioId(idServicio);
+	}
+
+	@GetMapping("/eventos/negocio/{idNegocio}")
+	public List<EventoCalendarioDTO> getEventosByNegocioId(@PathVariable Long idNegocio) {
+		return reservaService.getReservasByNegocioId(idNegocio);
 	}
 
 	/**

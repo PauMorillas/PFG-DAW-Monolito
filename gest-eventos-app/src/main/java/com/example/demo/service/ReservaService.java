@@ -13,4 +13,6 @@ public interface ReservaService {
 	Reserva confirmarReserva(String token);
 
 	List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio);
+
+    List<EventoCalendarioDTO> getReservasByNegocioId(Long idNegocio);
 }

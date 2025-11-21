@@ -47,7 +47,6 @@ public class PublicController {
 	public ModelAndView renderCalendarByServicio(@PathVariable Long idServicio) {
 		// Lógica: Mostrar el calendario
 		ModelAndView mav = new ModelAndView("public/calendar-view");
-
 		return mav;
 	}
 

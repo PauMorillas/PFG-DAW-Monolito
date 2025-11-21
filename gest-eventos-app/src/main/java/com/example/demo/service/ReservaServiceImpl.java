@@ -174,6 +174,16 @@ public class ReservaServiceImpl implements ReservaService {
 				.map(r -> EventoCalendarioDTO.convertToEvento(r, colorEvento)).toList();
 	}
 
+	@Override
+    public List<EventoCalendarioDTO> getReservasByNegocioId(Long idNegocio) {
+        String colorEvento = "#3B83BD"; // o cambiar según lógica
+
+        return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA)
+                .stream()
+                .map(reserva -> EventoCalendarioDTO.convertToEvento(reserva, colorEvento))
+                .toList();
+    }
+
 	// =======================================================
 	// III. MÉTODOS AUXILIARES
 	// =======================================================
