@@ -11,6 +11,7 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
+    // TODO: CONFIGURAR CRSF
     protected $except = [
         'api/save-domain', 
     ];

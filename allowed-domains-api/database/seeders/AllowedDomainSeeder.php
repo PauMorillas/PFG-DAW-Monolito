@@ -66,7 +66,8 @@ class AllowedDomainSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
-            // Si quieres añadir más CDNs, solo agregarlos aquí
+
+            // Para añadir más dominios estáticos, agregarlos aquí
         ]);
     }
 }
