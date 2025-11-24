@@ -101,9 +101,9 @@ public class ServicioServiceImpl implements ServicioService {
 			throw new RuntimeException("Error interno: Los datos del negocio son requeridos.");
 		}
 
-		// 4. Mapear a ServicioConfigDTO
+		// 4. Mapear a ServicioConfigDTO 
 		ServicioConfigDTO configDTO = new ServicioConfigDTO(servicioDTO.getId(), servicioDTO.getDuracionMinutos(),
-				negocioDTO.getHoraApertura(), negocioDTO.getHoraCierre());
+				negocioDTO.getHoraApertura(), negocioDTO.getHoraCierre(), negocioDTO.getDiasApertura());
 
 		// 5. Devolver el objeto de configuración (JSON)
 		return configDTO;

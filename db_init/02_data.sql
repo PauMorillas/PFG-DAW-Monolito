@@ -20,13 +20,14 @@ VALUES
 -- 2. INSERTAR NEGOCIOS
 -- ====================================================================
 -- Horario de apertura: 09:00:00 - 18:00:00 (9 horas)
-INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, id_gerente) VALUES
+INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cierre, dias_apertura, id_gerente) VALUES
 (
     'Corte y Estilo Premium', 
     'info@corteestilo.com', 
     '910777888', 
     '09:00:00', 
-    '18:00:00', 
+    '18:00:00',
+    '1,2,3,4,5',
     1 -- Gerente: Juan Pérez
 ),
 (
@@ -35,6 +36,7 @@ INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cie
     '930999000', 
     '08:30:00', 
     '17:30:00', 
+    '1,2,3,4,5',
     2 -- Gerente: Laura Gómez
 ),
 (
@@ -42,7 +44,8 @@ INSERT INTO negocio (nombre, correo_elec, telf_contacto, hora_apertura, hora_cie
     'recepcion@sonrisa.com', 
     '950111222', 
     '10:00:00', 
-    '14:00:00', 
+    '14:00:00',
+    '1,2,3,4',
     3 -- Gerente: Carlos Ruiz
 );
 
@@ -101,22 +104,45 @@ SET @ID_CLIENTE_3 = LAST_INSERT_ID();
 
 -- Lunes 10/11/2025 - Servicio Cambio de Aceite
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-10 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ACEITE),
-('2025-11-10 10:30:00', '2025-11-10 11:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
+('2025-11-24 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ACEITE),
+('2025-11-24 10:30:00', '2025-11-10 11:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
 
 -- Martes 11/11/2025 - Servicio Revisión Pre-ITV
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-11 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ITV);
+('2025-11-25 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ITV);
 
 -- Miércoles 12/11/2025 - Servicio Cambio de Aceite
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-12 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
+('2025-11-25 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
 
 -- Jueves 13/11/2025 - Servicio Revisión Pre-ITV (INACTIVA)
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-13 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ITV);
+('2025-11-27 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', @ID_CLIENTE_1, @ID_SERVICIO_ITV);
 
 -- Viernes 14/11/2025 - Servicio Cambio de Aceite
 INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
-('2025-11-14 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ACEITE),
-('2025-11-14 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
+('2025-11-21 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', @ID_CLIENTE_3, @ID_SERVICIO_ACEITE),
+('2025-11-21 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', @ID_CLIENTE_2, @ID_SERVICIO_ACEITE);
+
+-- === Reservas para los servicios de Academia de Yoga Zen ===
+-- Lunes 10/11/2025 - Servicio Cambio de Aceite
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-24 09:00:00', '2025-11-10 10:00:00', 'ACTIVA', @ID_CLIENTE_1, 3),
+('2025-11-24 10:30:00', '2025-11-10 11:30:00', 'ACTIVA', @ID_CLIENTE_2, 3);
+
+-- Martes 11/11/2025 - Servicio Revisión Pre-ITV
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-25 15:00:00', '2025-11-11 17:00:00', 'ACTIVA', @ID_CLIENTE_3, 4);
+
+-- Miércoles 12/11/2025 - Servicio Cambio de Aceite
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-25 11:30:00', '2025-11-12 12:30:00', 'ACTIVA', @ID_CLIENTE_2, 4);
+
+-- Jueves 13/11/2025 - Servicio Revisión Pre-ITV (INACTIVA)
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-26 08:30:00', '2025-11-13 10:30:00', 'INACTIVA', @ID_CLIENTE_1, 4);
+
+-- Viernes 14/11/2025 - Servicio Cambio de Aceite
+INSERT INTO reserva (fecha_inicio, fecha_fin, estado, id_cliente, id_servicio) VALUES
+('2025-11-27 10:00:00', '2025-11-14 11:00:00', 'ACTIVA', @ID_CLIENTE_3, 5),
+('2025-11-28 16:30:00', '2025-11-14 17:30:00', 'ACTIVA', @ID_CLIENTE_2, 5);

@@ -42,6 +42,9 @@ public class Negocio {
 	@Column(name = "hora_cierre", nullable = false)
 	private LocalTime horaCierre;
 
+	@Column(name = "dias_apertura")
+	private String diasApertura; // Ejemplo: "1,2,3,4,5"
+
 	// Relación N:1 con Usuario (Gerente). FK: id_gerente
 	@ManyToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_gerente", nullable = false)

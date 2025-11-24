@@ -26,6 +26,7 @@ public class NegocioDTO implements Serializable {
 	private String telfContacto;
 	private String horaApertura; // Formato HH:MM
 	private String horaCierre; // Formato HH:MM
+	private String diasApertura; // Ejemplo: "1,2,3,4,5"
 	private String correoGerente; // Correo del Gerente que vendrá desde Angular
 	private GerenteDTO gerenteDTO;
 	private List<ServicioDTO> listaServiciosDTO;
@@ -52,7 +53,6 @@ public class NegocioDTO implements Serializable {
 		return Objects.hash(id);
 	}
 
-	// TODO: CAMBIAR EL MANEJO DE LOS SERVICIOS
 	public static NegocioDTO convertToDTO(Negocio negocio, GerenteDTO gerenteDTO, List<ServicioDTO> listaServiciosDTO) {
 		NegocioDTO dto = new NegocioDTO();
 
@@ -63,7 +63,8 @@ public class NegocioDTO implements Serializable {
 		dto.setTelfContacto(negocio.getTelfContacto());
 		dto.setHoraApertura(negocio.getHoraApertura().format(formatter));
 		dto.setHoraCierre(negocio.getHoraCierre().format(formatter));
-		
+		dto.setDiasApertura(negocio.getDiasApertura());
+
 		// Asignación de dependencias (relaciones N:1 y 1:N)
 		dto.setGerenteDTO(gerenteDTO);
 		dto.setListaServiciosDTO(listaServiciosDTO);
@@ -83,6 +84,7 @@ public class NegocioDTO implements Serializable {
 		negocio.setTelfContacto(negocioDTO.getTelfContacto());
 		negocio.setHoraApertura(LocalTime.parse(negocioDTO.getHoraApertura(), formatter));
 		negocio.setHoraCierre(LocalTime.parse(negocioDTO.getHoraCierre(), formatter));
+		negocio.setDiasApertura(negocioDTO.getDiasApertura());
 
 		// Asignación de la Entidad completa (FK)
 		negocio.setGerente(gerente);

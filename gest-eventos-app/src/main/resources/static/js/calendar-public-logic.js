@@ -44,7 +44,8 @@ function formatSlotTimes(startStr, endStr) {
  * @returns {Promise<object|null>} Datos del cliente o null si cancela
  */
 function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
-  const PARENT_ORIGIN = window.parent === window ? window.location.origin : "http://localhost:8081"; // TODO: CAMBIAR A URL DE PRODUCCION
+  const PARENT_ORIGIN =
+    window.parent === window ? window.location.origin : "http://localhost:8081"; // TODO: CAMBIAR A URL DE PRODUCCION
   const preReserva = {
     startStr,
     endStr,
@@ -71,7 +72,10 @@ function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
     window.addEventListener("message", onParentMessage);
 
     try {
-      window.parent.postMessage({ type: "openClientForm", data: preReserva }, PARENT_ORIGIN);
+      window.parent.postMessage(
+        { type: "openClientForm", data: preReserva },
+        PARENT_ORIGIN
+      );
     } catch (e) {
       console.error("[CALENDAR] Error enviando openClientForm al padre", e);
       window.removeEventListener("message", onParentMessage);
@@ -147,17 +151,31 @@ async function sendPreReservaRequest(idServicio, startStr, endStr, clientData) {
  * @returns {FullCalendar.Calendar}
  */
 function createCalendar(calendarEl, config) {
-  const { idServicio, duracionMinutos, horaApertura, horaCierre } = config;
+  const {
+    idServicio,
+    duracionMinutos,
+    horaApertura,
+    horaCierre,
+    diasApertura,
+  } = config;
+
+  const diasAperturaArray = diasApertura
+    ? diasApertura.split(",").map((n) => {
+        const num = Number(n);
+        return num === 7 ? 0 : num;
+      })
+    : [];
 
   const slotDurationString =
     duracionMinutos >= 60 && duracionMinutos % 60 === 0
       ? `${String(duracionMinutos / 60).padStart(2, "0")}:00:00`
       : `00:${String(duracionMinutos).padStart(2, "0")}:00`;
-
   return new FullCalendar.Calendar(calendarEl, {
     themeSystem: "bootstrap5",
     locale: "es",
     initialView: "timeGridWeek",
+    allDaySlot: false,
+    nowIndicator: true,
     editable: false,
     selectable: true,
     selectMirror: true,
@@ -167,15 +185,50 @@ function createCalendar(calendarEl, config) {
     slotDuration: "00:15:00",
     snapDuration: slotDurationString,
     slotLabelFormat: { hour: "2-digit", minute: "2-digit", meridiem: false },
+    businessHours: {
+      daysOfWeek: diasAperturaArray,
+      startTime: horaApertura,
+      endTime: horaCierre,
+    },
     scrollTime: horaApertura,
     selectOverlap: false,
-    selectAllow: () => true,
+    selectAllow: (selectInfo) => {
+      const day = selectInfo.start.getDay();
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaSeleccionada = new Date(selectInfo.start);
+      fechaSeleccionada.setHours(0, 0, 0, 0);
+
+      if (!diasAperturaArray.includes(day)) return false;
+
+      if (fechaSeleccionada < hoy) return false;
+
+      return true;
+    },
+    // Deshabilita las fechas del pasado
+    dayCellDidMount: function (info) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaCelda = new Date(info.date);
+      fechaCelda.setHours(0, 0, 0, 0);
+
+      if (fechaCelda < hoy) {
+        info.el.classList.add("fc-day-disabled");
+      }
+    },
     headerToolbar: {
       left: "prev,next today",
       center: "title",
       end: "dayGridMonth,timeGridWeek,timeGridDay",
     },
     events: "/public/api/calendario/eventos/" + idServicio,
+    eventDidMount: function (info) {
+      // Oculta informacion del evento (solo queremos que vea la hora)
+      const titleEl = info.el.querySelector(".fc-event-title");
+      if (titleEl) titleEl.style.display = "none";
+    },
     select: async (info) => {
       const diffMin = Math.round((info.end - info.start) / 1000 / 60);
       if (diffMin !== duracionMinutos) {
@@ -193,7 +246,12 @@ function createCalendar(calendarEl, config) {
         return info.view.calendar.unselect();
       }
 
-      const clientData = await getClientDataFromForm(info.startStr, info.endStr, duracionMinutos, idServicio);
+      const clientData = await getClientDataFromForm(
+        info.startStr,
+        info.endStr,
+        duracionMinutos,
+        idServicio
+      );
       if (!clientData) {
         Swal.fire({
           title: "Reserva Cancelada",
@@ -205,13 +263,18 @@ function createCalendar(calendarEl, config) {
         return info.view.calendar.unselect();
       }
 
-      await sendPreReservaRequest(idServicio, info.startStr, info.endStr, clientData);
+      await sendPreReservaRequest(
+        idServicio,
+        info.startStr,
+        info.endStr,
+        clientData
+      );
       info.view.calendar.unselect();
     },
     eventClick: (info) => {
       Swal.fire({
         title: "Error!",
-        text: "Este turno ya está ocupado: " + info.event.title,
+        text: "Este turno ya está ocupado.",
         icon: "error",
         confirmButtonText: "Entendido!",
       });
@@ -245,14 +308,17 @@ async function loadCalendarConfiguration() {
   if (!idServicioParaAPI || isNaN(idServicioParaAPI)) {
     const calendarEl = document.getElementById("calendar");
     if (calendarEl) {
-      calendarEl.innerHTML = '<div class="alert alert-danger">No se pudo identificar el servicio a reservar.</div>';
+      calendarEl.innerHTML =
+        '<div class="alert alert-danger">No se pudo identificar el servicio a reservar.</div>';
     }
     console.error("ID de servicio inválido:", idServicioParaAPI);
     return;
   }
 
   try {
-    const response = await fetch("/public/api/calendario/config/" + idServicioParaAPI);
+    const response = await fetch(
+      "/public/api/calendario/config/" + idServicioParaAPI
+    );
     if (!response.ok) throw new Error(`Error ${response.status}`);
     const config = await response.json();
     initCalendar(config);
@@ -260,7 +326,8 @@ async function loadCalendarConfiguration() {
     console.error("Error al cargar configuración:", error);
     const calendarEl = document.getElementById("calendar");
     if (calendarEl) {
-      calendarEl.innerHTML = '<div class="alert alert-danger">No se pudo cargar la disponibilidad del servicio.</div>';
+      calendarEl.innerHTML =
+        '<div class="alert alert-danger">No se pudo cargar la disponibilidad del servicio.</div>';
     }
   }
 }
