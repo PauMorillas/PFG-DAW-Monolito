@@ -17,7 +17,9 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 	@Query("SELECT DISTINCT r FROM Reserva r JOIN r.servicio s WHERE s.negocio.id = :idNegocio"
 			+ " AND r.estado = :estadoParam")
 	List<Reserva> findAllByNegocioId(Long idNegocio, @Param("estadoParam") Estado estado);
-	
+
+	@Query("SELECT r FROM Reserva r WHERE r.servicio.id = :idServicio AND r.estado = :estado")
+	List<Reserva> findAllByServicioIdAndEstado(Long idServicio, Estado estado);
 
 	@Query("SELECT COUNT(r) FROM Reserva r WHERE r.servicio.id = :idServicio "
 			+ " AND r.estado = :estadoParam"

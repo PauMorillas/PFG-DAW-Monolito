@@ -67,7 +67,8 @@ public class ReservaServiceImpl implements ReservaService {
 		LocalDateTime end = endOffset.toLocalDateTime();
 
 		// 2. Validación de disponibilidad
-		// Lanza una excepción si el slot ya está ocupado (por reserva activa o pre-reserva vigente).
+		// Lanza una excepción si el slot ya está ocupado (por reserva activa o
+		// pre-reserva vigente).
 		validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
 
 		// 3. Crear y guardar la pre-reserva
@@ -77,7 +78,6 @@ public class ReservaServiceImpl implements ReservaService {
 		// 4. Envío del correo
 		enviarMailConfirmacion(preReserva);
 	}
-
 
 	// =======================================================
 	// II. LÓGICA DE VALIDACIÓN Y EXCEPCIONES
@@ -162,27 +162,39 @@ public class ReservaServiceImpl implements ReservaService {
 
 	// Devuelve las reservas de un determinado servicio
 	@Override
-	public List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio) {
+	public List<EventoCalendarioDTO> getAllReservasByServicioId(Long idServicio) {
 		// 1. Obtener el ID del Negocio asociado al servicio
 		Long idNegocio = servicioRepository.findIdNegocioByServicioId(idServicio)
 				.orElseThrow(() -> new EntityNotFoundException("Servicio no encontrado."));
-		
+
 		String colorEvento = "#3B83BD";
-		
-		// Una vez sabemos a que negocio pertenece el servicio, podemos obtener sus reservas
+
+		// Una vez sabemos a que negocio pertenece el servicio, podemos obtener sus
+		// reservas
 		return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA).stream()
 				.map(r -> EventoCalendarioDTO.convertToEvento(r, colorEvento)).toList();
 	}
 
 	@Override
-    public List<EventoCalendarioDTO> getReservasByNegocioId(Long idNegocio) {
-        String colorEvento = "#3B83BD"; // o cambiar según lógica
+	public List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio) {
+		String colorEvento = "#3B83BD";
 
-        return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA)
-                .stream()
-                .map(reserva -> EventoCalendarioDTO.convertToEvento(reserva, colorEvento))
-                .toList();
-    }
+		return reservaRepository
+				.findAllByServicioIdAndEstado(idServicio, Estado.ACTIVA)
+				.stream()
+				.map(r -> EventoCalendarioDTO.convertToEvento(r, colorEvento))
+				.toList();
+	}
+
+	@Override
+	public List<EventoCalendarioDTO> getAllReservasByNegocioId(Long idNegocio) {
+		String colorEvento = "#3B83BD"; // o cambiar según lógica
+
+		return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA)
+				.stream()
+				.map(reserva -> EventoCalendarioDTO.convertToEvento(reserva, colorEvento))
+				.toList();
+	}
 
 	// =======================================================
 	// III. MÉTODOS AUXILIARES

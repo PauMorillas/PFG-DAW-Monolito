@@ -12,7 +12,9 @@ public interface ReservaService {
 
 	Reserva confirmarReserva(String token);
 
+	List<EventoCalendarioDTO> getAllReservasByServicioId(Long idServicio);
+
 	List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio);
 
-    List<EventoCalendarioDTO> getReservasByNegocioId(Long idNegocio);
+    List<EventoCalendarioDTO> getAllReservasByNegocioId(Long idNegocio);
 }

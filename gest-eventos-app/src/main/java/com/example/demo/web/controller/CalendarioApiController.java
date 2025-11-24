@@ -15,6 +15,7 @@ import com.example.demo.service.ServicioService;
 
 @RestController
 @RequestMapping("/public/api/calendario")
+
 public class CalendarioApiController {
 	@Autowired
 	private ReservaService reservaService;
@@ -28,13 +29,18 @@ public class CalendarioApiController {
 	 * 
 	 */
 	@GetMapping("/eventos/{idServicio}")
+	public List<EventoCalendarioDTO> getAllEventosByServicioId(@PathVariable Long idServicio) {
+		return reservaService.getAllReservasByServicioId(idServicio);
+	}
+
+	@GetMapping("/eventos/servicio/{idServicio}")
 	public List<EventoCalendarioDTO> getEventosByServicioId(@PathVariable Long idServicio) {
 		return reservaService.getReservasByServicioId(idServicio);
 	}
 
 	@GetMapping("/eventos/negocio/{idNegocio}")
-	public List<EventoCalendarioDTO> getEventosByNegocioId(@PathVariable Long idNegocio) {
-		return reservaService.getReservasByNegocioId(idNegocio);
+	public List<EventoCalendarioDTO> getAllEventosByNegocioId(@PathVariable Long idNegocio) {
+		return reservaService.getAllReservasByNegocioId(idNegocio);
 	}
 
 	/**
