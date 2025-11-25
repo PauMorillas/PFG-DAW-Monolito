@@ -36,6 +36,22 @@ function formatSlotTimes(startStr, endStr) {
 }
 
 /**
+ * Convierte un objeto Date de JS a una cadena ISO 8601 local (YYYY-MM-DDTHH:mm:ss.SSS)
+ * @param {Date} date
+ * @returns {string} Cadena de fecha y hora local.
+ */
+function toLocalISOString(date) {
+  // 1. Calcula el offset y lo resta para obtener la fecha/hora local "como si fuera UTC".
+  const dateWithOffset = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60000
+  );
+  
+  // 2. Usamos toISOString(), cortamos la 'Z' final, y mantenemos los milisegundos si los hay
+  // Ejemplo de salida: "2025-11-25T12:30:00.000" (Longitud 23)
+  return dateWithOffset.toISOString().slice(0, 23);
+}
+
+/**
  * Solicita al padre que abra el formulario Angular y espera la respuesta.
  * @param {string} startStr
  * @param {string} endStr
@@ -166,13 +182,23 @@ function createCalendar(calendarEl, config) {
       })
     : [];
 
-  const slotDurationString =
-    duracionMinutos >= 60 && duracionMinutos % 60 === 0
-      ? `${String(duracionMinutos / 60).padStart(2, "0")}:00:00`
-      : `00:${String(duracionMinutos).padStart(2, "0")}:00`;
+  // FullCalendar prefiere el formato 'HH:mm:ss' y puede
+  // fallar al interpretar valores de minutos >= 60 (ej: '00:120:00').
+  let slotDurationString;
+  if (duracionMinutos >= 60 && duracionMinutos % 60 === 0) {
+    // Si es un múltiplo exacto de horas (60, 120, 180...)
+    const horas = duracionMinutos / 60;
+    slotDurationString = `${String(horas).padStart(2, "0")}:00:00`; // Ej salida: "02:00:00"
+  } else {
+    // Si son minutos arbitrarios (ej: 45, 90) el formato '00:MM:00' es aceptado y correcto.
+    slotDurationString = `00:${String(duracionMinutos).padStart(2, "0")}:00`;
+  }
+
   return new FullCalendar.Calendar(calendarEl, {
     themeSystem: "bootstrap5",
     locale: "es",
+    timeZone: "local",
+    forceEventDuration: true,
     initialView: "timeGridWeek",
     allDaySlot: false,
     nowIndicator: true,
@@ -183,7 +209,7 @@ function createCalendar(calendarEl, config) {
     slotMinTime: horaApertura,
     slotMaxTime: horaCierre,
     slotDuration: "00:15:00",
-    snapDuration: slotDurationString,
+    snapDuration: slotDurationString, // ajuste automático al hacer clic
     slotLabelFormat: { hour: "2-digit", minute: "2-digit", meridiem: false },
     businessHours: {
       daysOfWeek: diasAperturaArray,
@@ -192,20 +218,6 @@ function createCalendar(calendarEl, config) {
     },
     scrollTime: horaApertura,
     selectOverlap: false,
-    selectAllow: (selectInfo) => {
-      const day = selectInfo.start.getDay();
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      const fechaSeleccionada = new Date(selectInfo.start);
-      fechaSeleccionada.setHours(0, 0, 0, 0);
-
-      if (!diasAperturaArray.includes(day)) return false;
-
-      if (fechaSeleccionada < hoy) return false;
-
-      return true;
-    },
     // Deshabilita las fechas del pasado
     dayCellDidMount: function (info) {
       const hoy = new Date();
@@ -229,29 +241,173 @@ function createCalendar(calendarEl, config) {
       const titleEl = info.el.querySelector(".fc-event-title");
       if (titleEl) titleEl.style.display = "none";
     },
+    selectAllow: (selectInfo) => {
+      const day = selectInfo.start.getDay();
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaSeleccionada = new Date(selectInfo.start);
+      fechaSeleccionada.setHours(0, 0, 0, 0);
+
+      if (!diasAperturaArray.includes(day)) return false;
+      if (fechaSeleccionada < hoy) return false;
+
+      return true;
+    },
     select: async (info) => {
-      const diffMin = Math.round((info.end - info.start) / 1000 / 60);
-      if (diffMin !== duracionMinutos) {
+      const calendar = info.view.calendar;
+      const start = info.start;
+      const startMs = start.getTime(); // Tiempo UTC desde el Epoch (ms)
+
+      // 1. Calcular Fecha Fin OBLIGATORIA
+      const end = new Date(startMs + duracionMinutos * 60000);
+      const endMs = end.getTime();
+
+      // *** START DEBUG ***
+      // Usamos toLocalISOString para que el log muestre la hora de Madrid real (11:30)
+      console.groupCollapsed(
+        `[RESERVA] Intento: ${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} (Duración: ${duracionMinutos} min)`
+      );
+      console.log("--- DATOS DEL INTENTO ---");
+      console.log(`Inicio (ms/UTC): ${startMs} (${start.toISOString()})`);
+      console.log(`Inicio (Local Madrid): ${toLocalISOString(start)}`); // <-- Debug Visual Corregido
+      console.log(`Fin Target (ms/UTC): ${endMs} (${end.toISOString()})`);
+      console.log("-------------------------");
+      // *** END DEBUG ***
+
+      // 🚨 --- VALIDACIÓN A: HORA DE CIERRE ---
+      const [cierreHour, cierreMin] = horaCierre.split(":").map(Number);
+      const fechaCierre = new Date(start);
+      fechaCierre.setHours(cierreHour, cierreMin, 0, 0);
+
+      if (endMs > fechaCierre.getTime()) {
+        calendar.unselect();
         Swal.fire({
-          title: "Error de Duración",
-          text: `El servicio requiere ${duracionMinutos} minutos. Seleccionaste ${diffMin} min.`,
+          title: "Horario no permitido",
+          text: `El servicio dura ${duracionMinutos} min y excede la hora de cierre (${horaCierre}).`,
           icon: "warning",
-          toast: true,
-          position: "top",
-          timer: 4000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          showCloseButton: true,
         });
-        return info.view.calendar.unselect();
+        console.log("❌ Validación de Cierre: FALLADA.");
+        console.groupEnd();
+        return;
       }
 
+      // ✅ --- VALIDACIÓN C: HORA ACTUAL (NOW) ---
+      // CORREGIDO: Usamos new Date() directamente para la comparación UTC.
+      const now = new Date();
+      const nowMs = now.getTime();
+
+      // Bloquear si el inicio seleccionado es anterior o igual a la hora actual.
+      if (startMs <= nowMs) {
+        calendar.unselect();
+        Swal.fire({
+          title: "Tiempo Expirado",
+          text: "El horario seleccionado ya ha comenzado y no se puede reservar.",
+          icon: "error",
+          confirmButtonText: "Entendido",
+        });
+        console.log(
+          "❌ Validación de Hora Actual: FALLADA. Inicio está en el pasado."
+        );
+        console.groupEnd();
+        return;
+      }
+      console.log("✅ Validación de Hora Actual: PASADA.");
+
+      // 🚧 --- VALIDACIÓN B: COLISIONES (Solapamiento) ---
+      let collisionDetected = false;
+      const eventos = calendar.getEvents();
+
+      console.log(`[DEBUG EVENTOS] Total eventos recogidos: ${eventos.length}`);
+
+      const overlap = eventos.some((ev, index) => {
+        console.log(`[DEBUG EVENTOS] Evaluando evento #${index + 1}`);
+
+        if (ev.display === "background") return false;
+
+        if (!ev.end) {
+          console.warn(
+            `[DEBUG EVENTOS] Evento #${index + 1} (ID: ${
+              ev.id || "N/A"
+            }) descartado: ev.end es NULL. ¡Esto debe corregirse en la API!`
+          );
+          return false;
+        }
+
+        const evStartMs = ev.start.getTime();
+        const evEndMs = ev.end.getTime();
+
+        // Lógica estricta de solapamiento
+        const isOverlap = startMs < evEndMs && endMs > evStartMs;
+
+        // *** START DEBUG EN EL BUCLE ***
+        if (isOverlap) {
+          console.log("!!! COLISIÓN DETECTADA !!!");
+          console.log(
+            `Reserva Existente (Local): ${ev.start.toLocaleTimeString()} - ${ev.end.toLocaleTimeString()}`
+          );
+          console.log(`Inicio Existente (ISO): ${ev.start.toISOString()}`);
+          console.log(`Fin Existente (ISO): ${ev.end.toISOString()}`);
+          collisionDetected = true;
+        }
+        // *** END DEBUG EN EL BUCLE ***
+
+        return isOverlap;
+      });
+
+      // *** START DEBUG FINAL (DESPUÉS DEL BUCLE) ***
+      if (!collisionDetected) {
+        console.log("✅ Validación de Colisión: PASADA.");
+      }
+      console.groupEnd();
+      // *** END DEBUG FINAL ***
+
+      if (overlap) {
+        calendar.unselect();
+        Swal.fire({
+          title: "No disponible",
+          text: "El hueco seleccionado se solapa con otra reserva.",
+          icon: "error",
+          confirmButtonText: "Entendido",
+        });
+        return;
+      }
+
+      // --- 3. AJUSTE AUTOMÁTICO (Snap) CON ARREGLO DE RENDERING ---
+
+      // Comprobamos si la selección actual es la deseada (tolerancia de 1 segundo)
+      const diff = Math.abs(info.end.getTime() - endMs);
+
+      if (diff > 1000) {
+        // 1. Limpiamos la selección actual del slot pequeño
+        calendar.unselect();
+
+        // 2. Usamos setTimeout para romper el ciclo y aplicar la selección correcta
+        setTimeout(() => {
+          calendar.select(start, end);
+        }, 10);
+
+        return; // Detenemos la ejecución actual.
+      }
+
+      // =======================================================
+      // 4. FLUJO DE RESERVA (Solo se ejecuta cuando el snap ya está completo)
+      // =======================================================
+
+      // Usamos el helper toLocalISOString para enviar la fecha en formato local
+      // (sin la 'Z' de UTC) al backend, evitando el desajuste de 1 hora.
+      const startLocalStr = toLocalISOString(start);
+      const endLocalStr = toLocalISOString(end);
+
+      // Llama al formulario Angular
       const clientData = await getClientDataFromForm(
-        info.startStr,
-        info.endStr,
+        startLocalStr,
+        endLocalStr,
         duracionMinutos,
         idServicio
       );
+
+      // Mostramos mensaje de error si no llegan datos
       if (!clientData) {
         Swal.fire({
           title: "Reserva Cancelada",
@@ -263,12 +419,14 @@ function createCalendar(calendarEl, config) {
         return info.view.calendar.unselect();
       }
 
+      // Enviar pre-reserva
       await sendPreReservaRequest(
         idServicio,
-        info.startStr,
-        info.endStr,
+        startLocalStr,
+        endLocalStr,
         clientData
       );
+
       info.view.calendar.unselect();
     },
     eventClick: (info) => {

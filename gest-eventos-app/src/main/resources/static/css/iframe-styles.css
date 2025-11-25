@@ -18,7 +18,3 @@ body {
 .fc-day-disabled .fc-daygrid-day-number {
   color: #888 !important;
 }
-
-.fc-event-main-frame {
-  text-align: center;
-}

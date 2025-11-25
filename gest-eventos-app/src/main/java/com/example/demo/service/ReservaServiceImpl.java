@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -45,8 +46,8 @@ public class ReservaServiceImpl implements ReservaService {
 	@Autowired
 	private MailService mailService;
 
-	private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-	private static final long EXPIRATION_MINUTES = 30; // Token válido por 30 minutos
+	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
 
 	// =======================================================
 	// I. CREACIÓN DE PRE-RESERVA (CONCURRENCIA CONTROLADA)
@@ -54,29 +55,36 @@ public class ReservaServiceImpl implements ReservaService {
 
 	// ANOTACIÓN CLAVE: SERIALIZABLE previene que dos transacciones concurrentes
 	// lean el mismo slot como disponible antes de que la primera lo bloquee.
+	@Override
 	@Transactional(isolation = Isolation.SERIALIZABLE)
 	public void crearPreReserva(ReservaRequestDTO reservaRequestDTO) throws ResponseStatusException {
 
-		// 1. Parsear y Estandarizar Fechas para manejar el +02:00
-		OffsetDateTime startOffset = OffsetDateTime.parse(reservaRequestDTO.getFechaInicio(), ISO_FORMATTER);
-		OffsetDateTime endOffset = OffsetDateTime.parse(reservaRequestDTO.getFechaFin(), ISO_FORMATTER);
+		// 1. Parsear y Estandarizar Fechas
+        // Usamos LocalDateTime.parse() con el formatter exacto para aceptar
+        // "2025-11-25T12:30:00.000" y evitar errores al parsear.
+        try {
+            // Convierte el String a LocalDateTime
+            LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
+            LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
 
-		// Convertir a LocalDateTime (eliminando el offset, pero manteniendo la hora
-		// local del usuario)
-		LocalDateTime start = startOffset.toLocalDateTime();
-		LocalDateTime end = endOffset.toLocalDateTime();
+            // 2. Validación de disponibilidad
+            // Lanza una excepción si el slot ya está ocupado.
+            validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
 
-		// 2. Validación de disponibilidad
-		// Lanza una excepción si el slot ya está ocupado (por reserva activa o
-		// pre-reserva vigente).
-		validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
+            // 3. Crear y guardar la pre-reserva
+            PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
+            preReserva = preReservaRepository.save(preReserva);
 
-		// 3. Crear y guardar la pre-reserva
-		PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
-		preReserva = preReservaRepository.save(preReserva);
-
-		// 4. Envío del correo
-		enviarMailConfirmacion(preReserva);
+            // 4. Envío del correo
+            enviarMailConfirmacion(preReserva);
+            
+        } catch (DateTimeParseException e) {
+            // Captura específicamente el error de parsing y lo relanza como un error del cliente (400)
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, 
+                "Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage()
+            );
+        }
 	}
 
 	// =======================================================

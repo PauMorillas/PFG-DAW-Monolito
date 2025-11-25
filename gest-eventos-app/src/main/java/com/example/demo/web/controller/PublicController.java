@@ -67,6 +67,7 @@ public class PublicController {
 		}
 		catch (Exception e) {
 			// Captura otros errores (ej. 500)
+			e.printStackTrace();
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al procesar la reserva: " + e.getMessage());
 	    }
 	}

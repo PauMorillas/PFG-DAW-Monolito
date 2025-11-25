@@ -1,6 +1,8 @@
 package com.example.demo.model.dto;
 
 import java.io.Serializable;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.example.demo.repository.entity.Reserva;
@@ -16,7 +18,7 @@ public class EventoCalendarioDTO implements Serializable {
 	private String start; // Fecha y hora de inicio (Formato ISO 8601: YYYY-MM-DDTTHH:mm:ss)
 	private String end; // Fecha y hora de fin
 	private String color; // Opcional: Color para pintar el bloque
-	private Long idReserva; // ID de la reserva en mi sistema para referenciarla
+	private Long id; // ID de la reserva en mi sistema para referenciarla
 
 	public EventoCalendarioDTO(String title, String start, String end, String color) {
 		this.title = title;
@@ -30,18 +32,23 @@ public class EventoCalendarioDTO implements Serializable {
 	}
 
 	public static EventoCalendarioDTO convertToEvento(Reserva reserva, String color) {
-		// Definir el formateador ISO 8601, el estándar de FullCalendar
-		// Usamos el formato que incluye zona horaria (offset) o el formato local,
-		// pero asegurando que no haya nanosegundos si Reserva.fechaInicio es
-		// LocalDateTime.
-		DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+		// 1. Define la zona horaria del negocio a España
+		ZoneId businessZone = ZoneId.of("Europe/Madrid");
+
+		// 2. Convierte el LocalDateTime (que es ambiguo) a un ZonedDateTime
+		ZonedDateTime startInMadrid = reserva.getFechaInicio().atZone(businessZone);
+		ZonedDateTime endInMadrid = reserva.getFechaFin().atZone(businessZone);
+
+		// 3. Usa un formateador que incluya el offset para mayor claridad en el JSON
+		// Ej: 2025-10-10T10:00:00+02:00
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 		EventoCalendarioDTO dto = new EventoCalendarioDTO();
 		dto.setTitle(reserva.getServicio().getTitulo());
-		dto.setStart(reserva.getFechaInicio().format(formatter)); // Ej: 2025-10-10T10:00:00
-		dto.setEnd(reserva.getFechaFin().format(formatter)); // Ej: 2025-10-10T12:00:00
+		dto.setStart(startInMadrid.format(formatter)); // Ej: 2025-10-10T10:00:00+02:00
+		dto.setEnd(endInMadrid.format(formatter)); // Ej: 2025-10-10T12:00:00+02:00
 		dto.setColor(color);
-		dto.setIdReserva(reserva.getId());
+		dto.setId(reserva.getId());
 
 		return dto;
 	}
