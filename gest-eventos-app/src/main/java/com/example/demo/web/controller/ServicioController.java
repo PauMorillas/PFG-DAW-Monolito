@@ -1,7 +1,5 @@
 package com.example.demo.web.controller;
 
-import org.apache.catalina.connector.Response;
-import org.apache.el.util.Validation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;

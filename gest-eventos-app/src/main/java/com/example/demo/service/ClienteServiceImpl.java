@@ -13,6 +13,8 @@ import com.example.demo.model.dto.ReservaRequestDTO;
 import com.example.demo.repository.dao.ClienteRepository;
 import com.example.demo.repository.entity.Cliente;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 @Slf4j
 public class ClienteServiceImpl implements ClienteService {
@@ -51,17 +53,36 @@ public class ClienteServiceImpl implements ClienteService {
 	}
 
 	@Override
+	public ClienteDTO findByEmailAndPass(String email, String pass) {
+		Cliente cliente = null;
+
+		// 1. Busca el cliente por email y lanza EntityNotFoundException si no existe
+		cliente = clienteRepository.findByEmail(email)
+				// Usa el mismo mensaje para no dar pistas sobre si falló el email o el pass
+				.orElseThrow(() -> new EntityNotFoundException("Email o contraseña incorrectos."));
+
+		// 2. Verifica la contraseña y lanza una excepción si no coincide
+		if (!passwordEncoder.matches(pass, cliente.getPass())) {
+			// Lanza EntityNotFoundException si la contraseña es incorrecta
+			throw new EntityNotFoundException("Email o contraseña incorrectos.");
+		}
+
+		// 3. Si todo es correcto, devuelve el DTO
+		return ClienteDTO.convertToDTO(cliente);
+	}
+
+	@Override
 	public void guardarCliente(ClienteDTO clienteDTO) {
 		try {
 			log.info("Iniciando registro de cliente: {}", clienteDTO.getEmail());
 			validarCliente(clienteDTO);
-			
+
 			// Si pasa las validaciones sin lanzar excepción, procedemos a guardar
 			Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
 			cliente.setPass(passwordEncoder.encode(clienteDTO.getPass()));
 			clienteRepository.save(cliente);
 			log.info("Cliente registrado correctamente: {}", clienteDTO.getEmail());
-			
+
 		} catch (ClienteValidationException e) {
 			log.error("Error de validación al registrar cliente: {}", e.getMessage());
 			throw e; // Propagamos la excepción para que el controlador la maneje
@@ -105,13 +126,14 @@ public class ClienteServiceImpl implements ClienteService {
 			String pass = clienteDTO.getPass();
 			String passRegex = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$";
 			if (!pass.matches(passRegex)) {
-				errores.append("La contraseña debe tener al menos 8 caracteres, incluir al menos una letra y un número. ");
+				errores.append(
+						"La contraseña debe tener al menos 8 caracteres, incluir al menos una letra y un número. ");
 			}
 		}
 
 		// 6. Validación de correo electrónico único
-		if (!isEmptyOrNull(clienteDTO.getEmail()) && 
-			clienteRepository.findByEmail(clienteDTO.getEmail()).isPresent()) {
+		if (!isEmptyOrNull(clienteDTO.getEmail()) &&
+				clienteRepository.findByEmail(clienteDTO.getEmail()).isPresent()) {
 			errores.append("El correo electrónico ya está registrado. ");
 		}
 

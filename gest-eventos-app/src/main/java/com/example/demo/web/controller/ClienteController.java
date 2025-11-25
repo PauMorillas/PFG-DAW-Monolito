@@ -3,6 +3,8 @@ package com.example.demo.web.controller;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.text.html.parser.Entity;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.exception.ClienteValidationException;
 import com.example.demo.model.dto.ClienteDTO;
+import com.example.demo.model.dto.LoginRequestDTO;
 import com.example.demo.service.ClienteService;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -59,6 +63,21 @@ public class ClienteController {
             
             log.error("Error inesperado en registro: {}", e.getMessage(), e);
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // api/clientes/login
+    @PostMapping("/login")
+    public ResponseEntity<?> loguearCliente(@RequestBody LoginRequestDTO reqDTO) {
+        ClienteDTO cli = null;
+        try {
+            cli = clienteService.findByEmailAndPass(reqDTO.getEmail(), reqDTO.getPassword());
+            return ResponseEntity.ok(cli);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 }

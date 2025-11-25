@@ -8,4 +8,6 @@ import com.example.demo.repository.entity.Cliente;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 	public Optional<Cliente> findByEmail(String email);
+
+    public Optional<Cliente> findByEmailAndPass(String email, String pass);
 }
