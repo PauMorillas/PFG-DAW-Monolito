@@ -5,7 +5,7 @@
 const ANGULAR_ORIGIN = "http://localhost:4200"; // TODO: cambiar a producción cuando se despliegue
 
 // ===========================================================
-// 2. HELPER FUNCTIONS
+// 2. FUNCIONES HELPERS (Para el manejo de Fechas)
 // ===========================================================
 
 /**
@@ -23,6 +23,7 @@ function formatSlotTimes(startStr, endStr) {
     hour: "2-digit",
     minute: "2-digit",
   };
+
   const startDate = new Date(startStr);
   const endDate = new Date(endStr);
 
@@ -45,12 +46,136 @@ function toLocalISOString(date) {
   const dateWithOffset = new Date(
     date.getTime() - date.getTimezoneOffset() * 60000
   );
-  
+
   // 2. Usamos toISOString(), cortamos la 'Z' final, y mantenemos los milisegundos si los hay
   // Ejemplo de salida: "2025-11-25T12:30:00.000" (Longitud 23)
   return dateWithOffset.toISOString().slice(0, 23);
 }
 
+/**
+ * Calcula la duración de 'snap' de FullCalendar en formato HH:mm:ss.
+ * @param {number} duracionMinutos
+ * @returns {string} Duración en formato HH:mm:ss
+ */
+function calculateSnapDuration(duracionMinutos) {
+  if (duracionMinutos >= 60 && duracionMinutos % 60 === 0) {
+    const horas = duracionMinutos / 60;
+    return `${String(horas).padStart(2, "0")}:00:00`;
+  } else {
+    return `00:${String(duracionMinutos).padStart(2, "0")}:00`;
+  }
+}
+
+// ==========================================================================
+// 2.1 HELPERS DE VALIDACIÓN (Para organizar la lógica del evento 'select')
+// ==========================================================================
+
+/**
+ * Valida que la hora de finalización del slot no exceda la hora de cierre del servicio.
+ */
+function validateClosingTime(start, endMs, horaCierre) {
+  const [cierreHour, cierreMin] = horaCierre.split(":").map(Number);
+  const fechaCierre = new Date(start);
+  fechaCierre.setHours(cierreHour, cierreMin, 0, 0);
+
+  if (endMs > fechaCierre.getTime()) {
+    Swal.fire({
+      title: "Horario no permitido",
+      text: `El servicio excede la hora de cierre (${horaCierre}).`,
+      icon: "warning",
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Valida que el inicio del slot no esté en el pasado.
+ */
+function validateCurrentTime(startMs) {
+  const nowMs = new Date().getTime();
+  if (startMs <= nowMs) {
+    Swal.fire({
+      title: "Tiempo Expirado",
+      text: "El horario seleccionado ya ha comenzado y no se puede reservar.",
+      icon: "error",
+      confirmButtonText: "Entendido",
+    });
+    return false;
+  }
+  return true;
+}
+
+// TODO: PRODUCCION Quitar Debugs
+/**
+ * Valida que el slot no se solape con eventos existentes (reservas).
+ */
+function validateCollisions(startMs, endMs, calendar) {
+  const eventos = calendar.getEvents();
+  console.log(`[EVENTOS] Total eventos recogidos: ${eventos.length}`);
+  let collisionDetected = false;
+
+  const overlap = eventos.some((ev, index) => {
+    // Excluir eventos sin final o de tipo 'background'
+    if (ev.display === "background" || !ev.end) {
+      if (!ev.end)
+        console.warn(
+          `[EVENTOS] Evento #${index + 1} (ID: ${
+            ev.id || "N/A"
+          }) descartado: ev.end es NULL.`
+        );
+      return false;
+    }
+
+    const evStartMs = ev.start.getTime();
+    const evEndMs = ev.end.getTime();
+
+    // Lógica estricta de solapamiento
+    const isOverlap = startMs < evEndMs && endMs > evStartMs;
+
+    if (isOverlap) {
+      console.log("!!! COLISIÓN DETECTADA !!!");
+      collisionDetected = true;
+    }
+    return isOverlap;
+  });
+
+  if (overlap) {
+    Swal.fire({
+      title: "No disponible",
+      text: "El hueco seleccionado se solapa con otra reserva.",
+      icon: "error",
+      confirmButtonText: "Entendido",
+    });
+    return false;
+  }
+
+  // Usamos la bandera para el logging final, como lo hacías antes.
+  if (!collisionDetected) {
+    console.log("Validación de Colisión: PASADA."); 
+  }
+  
+  return true;
+}
+
+/**
+ * Lógica para deshabilitar días pasados.
+ */
+function disablePastDays(info) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const fechaCelda = new Date(info.date);
+  fechaCelda.setHours(0, 0, 0, 0);
+
+  if (fechaCelda < hoy) {
+    info.el.classList.add("fc-day-disabled");
+  }
+}
+
+// ===========================================================
+// 3. Funciones para el envío de datos
+// ===========================================================
 /**
  * Solicita al padre que abra el formulario Angular y espera la respuesta.
  * @param {string} startStr
@@ -157,287 +282,102 @@ async function sendPreReservaRequest(idServicio, startStr, endStr, clientData) {
 }
 
 // ===========================================================
-// 3. FUNCIONES DE CALENDARIO
+// 4. FUNCIONES DE CALENDARIO (Orquestadores)
 // ===========================================================
 
 /**
- * Crea y devuelve una instancia de FullCalendar con toda la configuración necesaria
- * @param {HTMLElement} calendarEl
- * @param {object} config
- * @returns {FullCalendar.Calendar}
+ * Gestiona el evento 'select' del calendario, realizando todas las validaciones
+ * y ejecutando el flujo de pre-reserva (incluyendo la llamada a Angular).
+ *
+ * @param {object} info - El objeto de información de selección de FullCalendar.
+ * @param {object} config - La configuración del servicio (duracionMinutos, horaCierre, idServicio).
+ * @param {FullCalendar.Calendar} calendar - Instancia del calendario.
+ * @param {function} toLocalISOString - Función helper para formatear fechas.
  */
-function createCalendar(calendarEl, config) {
-  const {
-    idServicio,
-    duracionMinutos,
-    horaApertura,
-    horaCierre,
-    diasApertura,
-  } = config;
+async function handleSlotSelection(info, config, calendar, toLocalISOString) {
+  const { duracionMinutos, horaCierre, idServicio } = config;
+  const { start } = info;
 
-  const diasAperturaArray = diasApertura
-    ? diasApertura.split(",").map((n) => {
-        const num = Number(n);
-        return num === 7 ? 0 : num;
-      })
-    : [];
+  const startMs = start.getTime();
+  const end = new Date(startMs + duracionMinutos * 60000);
+  const endMs = end.getTime();
 
-  // FullCalendar prefiere el formato 'HH:mm:ss' y puede
-  // fallar al interpretar valores de minutos >= 60 (ej: '00:120:00').
-  let slotDurationString;
-  if (duracionMinutos >= 60 && duracionMinutos % 60 === 0) {
-    // Si es un múltiplo exacto de horas (60, 120, 180...)
-    const horas = duracionMinutos / 60;
-    slotDurationString = `${String(horas).padStart(2, "0")}:00:00`; // Ej salida: "02:00:00"
-  } else {
-    // Si son minutos arbitrarios (ej: 45, 90) el formato '00:MM:00' es aceptado y correcto.
-    slotDurationString = `00:${String(duracionMinutos).padStart(2, "0")}:00`;
-  }
+  // --- DEBUG ---
+  console.groupCollapsed(`[RESERVA] Intento: ${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} (${duracionMinutos} min)`);
+  console.log(`Inicio (Local Madrid): ${toLocalISOString(start)}`);
+  console.log(`Fin Target (UTC): ${end.toISOString()}`);
 
-  return new FullCalendar.Calendar(calendarEl, {
-    themeSystem: "bootstrap5",
-    locale: "es",
-    timeZone: "local",
-    forceEventDuration: true,
-    initialView: "timeGridWeek",
-    allDaySlot: false,
-    nowIndicator: true,
-    editable: false,
-    selectable: true,
-    selectMirror: true,
-    expandRows: true,
-    slotMinTime: horaApertura,
-    slotMaxTime: horaCierre,
-    slotDuration: "00:15:00",
-    snapDuration: slotDurationString, // ajuste automático al hacer clic
-    slotLabelFormat: { hour: "2-digit", minute: "2-digit", meridiem: false },
-    businessHours: {
-      daysOfWeek: diasAperturaArray,
-      startTime: horaApertura,
-      endTime: horaCierre,
-    },
-    scrollTime: horaApertura,
-    selectOverlap: false,
-    // Deshabilita las fechas del pasado
-    dayCellDidMount: function (info) {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
+  try {
+    // --- VALIDACIÓN A: HORA DE CIERRE ---
+    if (!validateClosingTime(start, endMs, horaCierre)) {
+      calendar.unselect();
+      return;
+    }
 
-      const fechaCelda = new Date(info.date);
-      fechaCelda.setHours(0, 0, 0, 0);
+    // --- VALIDACIÓN C: HORA ACTUAL (NOW) ---
+    if (!validateCurrentTime(startMs)) {
+      calendar.unselect();
+      return;
+    }
 
-      if (fechaCelda < hoy) {
-        info.el.classList.add("fc-day-disabled");
-      }
-    },
-    headerToolbar: {
-      left: "prev,next today",
-      center: "title",
-      end: "dayGridMonth,timeGridWeek,timeGridDay",
-    },
-    events: "/public/api/calendario/eventos/" + idServicio,
-    eventDidMount: function (info) {
-      // Oculta informacion del evento (solo queremos que vea la hora)
-      const titleEl = info.el.querySelector(".fc-event-title");
-      if (titleEl) titleEl.style.display = "none";
-    },
-    selectAllow: (selectInfo) => {
-      const day = selectInfo.start.getDay();
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
+    // --- VALIDACIÓN B: COLISIONES (Solapamiento) ---
+    if (!validateCollisions(startMs, endMs, calendar)) { // <--- Esta función debe incluir el logging corregido
+      calendar.unselect();
+      return;
+    }
 
-      const fechaSeleccionada = new Date(selectInfo.start);
-      fechaSeleccionada.setHours(0, 0, 0, 0);
+    // --- AJUSTE AUTOMÁTICO (Snap) con Arreglo de Rendering ---
+    const diff = Math.abs(info.end.getTime() - endMs);
+    if (diff > 1000) {
+      calendar.unselect();
+      setTimeout(() => calendar.select(start, end), 10);
+      return;
+    }
 
-      if (!diasAperturaArray.includes(day)) return false;
-      if (fechaSeleccionada < hoy) return false;
+    // --- FLUJO DE RESERVA (COMUNICACIÓN EXTERNA) ---
 
-      return true;
-    },
-    select: async (info) => {
-      const calendar = info.view.calendar;
-      const start = info.start;
-      const startMs = start.getTime(); // Tiempo UTC desde el Epoch (ms)
+    // Preparamos las fechas en el formato exacto que el Backend espera (sin 'Z')
+    const startLocalStr = toLocalISOString(start);
+    const endLocalStr = toLocalISOString(end);
 
-      // 1. Calcular Fecha Fin OBLIGATORIA
-      const end = new Date(startMs + duracionMinutos * 60000);
-      const endMs = end.getTime();
+    // Llama al formulario Angular y espera los datos del cliente
+    const clientData = await getClientDataFromForm(
+      startLocalStr,
+      endLocalStr,
+      duracionMinutos,
+      idServicio
+    );
 
-      // *** START DEBUG ***
-      // Usamos toLocalISOString para que el log muestre la hora de Madrid real (11:30)
-      console.groupCollapsed(
-        `[RESERVA] Intento: ${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} (Duración: ${duracionMinutos} min)`
-      );
-      console.log("--- DATOS DEL INTENTO ---");
-      console.log(`Inicio (ms/UTC): ${startMs} (${start.toISOString()})`);
-      console.log(`Inicio (Local Madrid): ${toLocalISOString(start)}`); // <-- Debug Visual Corregido
-      console.log(`Fin Target (ms/UTC): ${endMs} (${end.toISOString()})`);
-      console.log("-------------------------");
-      // *** END DEBUG ***
-
-      // 🚨 --- VALIDACIÓN A: HORA DE CIERRE ---
-      const [cierreHour, cierreMin] = horaCierre.split(":").map(Number);
-      const fechaCierre = new Date(start);
-      fechaCierre.setHours(cierreHour, cierreMin, 0, 0);
-
-      if (endMs > fechaCierre.getTime()) {
-        calendar.unselect();
-        Swal.fire({
-          title: "Horario no permitido",
-          text: `El servicio dura ${duracionMinutos} min y excede la hora de cierre (${horaCierre}).`,
-          icon: "warning",
-        });
-        console.log("❌ Validación de Cierre: FALLADA.");
-        console.groupEnd();
-        return;
-      }
-
-      // ✅ --- VALIDACIÓN C: HORA ACTUAL (NOW) ---
-      // CORREGIDO: Usamos new Date() directamente para la comparación UTC.
-      const now = new Date();
-      const nowMs = now.getTime();
-
-      // Bloquear si el inicio seleccionado es anterior o igual a la hora actual.
-      if (startMs <= nowMs) {
-        calendar.unselect();
-        Swal.fire({
-          title: "Tiempo Expirado",
-          text: "El horario seleccionado ya ha comenzado y no se puede reservar.",
-          icon: "error",
-          confirmButtonText: "Entendido",
-        });
-        console.log(
-          "❌ Validación de Hora Actual: FALLADA. Inicio está en el pasado."
-        );
-        console.groupEnd();
-        return;
-      }
-      console.log("✅ Validación de Hora Actual: PASADA.");
-
-      // 🚧 --- VALIDACIÓN B: COLISIONES (Solapamiento) ---
-      let collisionDetected = false;
-      const eventos = calendar.getEvents();
-
-      console.log(`[DEBUG EVENTOS] Total eventos recogidos: ${eventos.length}`);
-
-      const overlap = eventos.some((ev, index) => {
-        console.log(`[DEBUG EVENTOS] Evaluando evento #${index + 1}`);
-
-        if (ev.display === "background") return false;
-
-        if (!ev.end) {
-          console.warn(
-            `[DEBUG EVENTOS] Evento #${index + 1} (ID: ${
-              ev.id || "N/A"
-            }) descartado: ev.end es NULL. ¡Esto debe corregirse en la API!`
-          );
-          return false;
-        }
-
-        const evStartMs = ev.start.getTime();
-        const evEndMs = ev.end.getTime();
-
-        // Lógica estricta de solapamiento
-        const isOverlap = startMs < evEndMs && endMs > evStartMs;
-
-        // *** START DEBUG EN EL BUCLE ***
-        if (isOverlap) {
-          console.log("!!! COLISIÓN DETECTADA !!!");
-          console.log(
-            `Reserva Existente (Local): ${ev.start.toLocaleTimeString()} - ${ev.end.toLocaleTimeString()}`
-          );
-          console.log(`Inicio Existente (ISO): ${ev.start.toISOString()}`);
-          console.log(`Fin Existente (ISO): ${ev.end.toISOString()}`);
-          collisionDetected = true;
-        }
-        // *** END DEBUG EN EL BUCLE ***
-
-        return isOverlap;
-      });
-
-      // *** START DEBUG FINAL (DESPUÉS DEL BUCLE) ***
-      if (!collisionDetected) {
-        console.log("✅ Validación de Colisión: PASADA.");
-      }
-      console.groupEnd();
-      // *** END DEBUG FINAL ***
-
-      if (overlap) {
-        calendar.unselect();
-        Swal.fire({
-          title: "No disponible",
-          text: "El hueco seleccionado se solapa con otra reserva.",
-          icon: "error",
-          confirmButtonText: "Entendido",
-        });
-        return;
-      }
-
-      // --- 3. AJUSTE AUTOMÁTICO (Snap) CON ARREGLO DE RENDERING ---
-
-      // Comprobamos si la selección actual es la deseada (tolerancia de 1 segundo)
-      const diff = Math.abs(info.end.getTime() - endMs);
-
-      if (diff > 1000) {
-        // 1. Limpiamos la selección actual del slot pequeño
-        calendar.unselect();
-
-        // 2. Usamos setTimeout para romper el ciclo y aplicar la selección correcta
-        setTimeout(() => {
-          calendar.select(start, end);
-        }, 10);
-
-        return; // Detenemos la ejecución actual.
-      }
-
-      // =======================================================
-      // 4. FLUJO DE RESERVA (Solo se ejecuta cuando el snap ya está completo)
-      // =======================================================
-
-      // Usamos el helper toLocalISOString para enviar la fecha en formato local
-      // (sin la 'Z' de UTC) al backend, evitando el desajuste de 1 hora.
-      const startLocalStr = toLocalISOString(start);
-      const endLocalStr = toLocalISOString(end);
-
-      // Llama al formulario Angular
-      const clientData = await getClientDataFromForm(
-        startLocalStr,
-        endLocalStr,
-        duracionMinutos,
-        idServicio
-      );
-
-      // Mostramos mensaje de error si no llegan datos
-      if (!clientData) {
-        Swal.fire({
-          title: "Reserva Cancelada",
-          text: "Debes completar los datos para reservar.",
-          icon: "info",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-        return info.view.calendar.unselect();
-      }
-
-      // Enviar pre-reserva
-      await sendPreReservaRequest(
-        idServicio,
-        startLocalStr,
-        endLocalStr,
-        clientData
-      );
-
-      info.view.calendar.unselect();
-    },
-    eventClick: (info) => {
+    if (!clientData) {
       Swal.fire({
-        title: "Error!",
-        text: "Este turno ya está ocupado.",
-        icon: "error",
-        confirmButtonText: "Entendido!",
+        title: "Reserva Cancelada",
+        text: "Debes completar los datos para reservar.",
+        icon: "info",
+        timer: 2000,
+        showConfirmButton: false,
       });
-    },
-  });
+      return; // No unselect aquí, se hace en el finally
+    }
+
+    // --- Enviar pre-reserva al Backend ---
+    await sendPreReservaRequest(
+      idServicio,
+      startLocalStr,
+      endLocalStr,
+      clientData
+    );
+
+  } catch (error) {
+    console.error("Error crítico durante la selección del slot:", error);
+    Swal.fire({
+      title: "Error Inesperado",
+      text: "Ocurrió un error al procesar la reserva. Revise la consola.",
+      icon: "error",
+    });
+  } finally {
+    calendar.unselect();
+    console.groupEnd();
+  }
 }
 
 /**
@@ -455,8 +395,112 @@ function initCalendar(config) {
   calendar.render();
 }
 
+/**
+ * Crea y devuelve una instancia de FullCalendar con toda la configuración necesaria
+ * @param {HTMLElement} calendarEl
+ * @param {object} config
+ * @returns {FullCalendar.Calendar}
+ */
+function createCalendar(calendarEl, config) {
+  const {
+    idServicio,
+    duracionMinutos,
+    horaApertura,
+    horaCierre,
+    diasApertura,
+  } = config;
+
+  // Preparación de datos de configuración
+  const diasAperturaArray = diasApertura
+    ? diasApertura.split(",").map((n) => {
+        const num = Number(n);
+        return num === 7 ? 0 : num;
+      })
+    : [];
+
+  // Se asume que calculateSnapDuration es un helper ahora
+  const slotDurationString = calculateSnapDuration(duracionMinutos); 
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    // --- CONFIGURACIÓN ESTÁTICA ---
+    themeSystem: "bootstrap5",
+    locale: "es",
+    timeZone: "local",
+    forceEventDuration: true,
+    initialView: "timeGridWeek",
+    allDaySlot: false,
+    selectOverlap: false,
+    nowIndicator: true,
+    editable: false,
+    selectable: true,
+    selectMirror: true,
+    expandRows: true,
+    
+    // --- HORARIOS Y VISTA ---
+    slotMinTime: horaApertura,
+    slotMaxTime: horaCierre,
+    slotDuration: "00:15:00",
+    snapDuration: slotDurationString,
+    slotLabelFormat: { hour: "2-digit", minute: "2-digit", meridiem: false },
+    businessHours: {
+      daysOfWeek: diasAperturaArray,
+      startTime: horaApertura,
+      endTime: horaCierre,
+    },
+    scrollTime: horaApertura,
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      end: "dayGridMonth,timeGridWeek,timeGridDay",
+    },
+    
+    // --- DATOS Y RENDERING ---
+    events: "/public/api/calendario/eventos/" + idServicio,
+    eventDidMount: function (info) {
+      // Oculta informacion del evento
+      const titleEl = info.el.querySelector(".fc-event-title");
+      if (titleEl) titleEl.style.display = "none";
+    },
+
+    // --- HOOKS DE FULLCALENDAR ---
+    dayCellDidMount: disablePastDays,
+    
+    selectAllow: (selectInfo) => {
+      // Lógica de validación de días de apertura y pasado
+      const day = selectInfo.start.getDay();
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaSeleccionada = new Date(selectInfo.start);
+      fechaSeleccionada.setHours(0, 0, 0, 0);
+
+      if (!diasAperturaArray.includes(day)) return false;
+      if (fechaSeleccionada < hoy) return false;
+
+      return true;
+    },
+    
+    // --- MANEJADOR DE EVENTO PRINCIPAL ---
+    select: (info) => {
+      // Llama al manejador de flujo, delegando toda la lógica
+      handleSlotSelection(info, config, calendar, toLocalISOString);
+    },
+    
+    eventClick: (info) => {
+      Swal.fire({
+        title: "Error!",
+        text: "Este turno ya está ocupado.",
+        icon: "error",
+        confirmButtonText: "Entendido!",
+      });
+    },
+  });
+  
+  return calendar;
+}
+
 // ===========================================================
-// 4. CARGA DE CONFIGURACIÓN DESDE EL BACKEND
+// 5. CARGA DE CONFIGURACIÓN DESDE EL BACKEND
 // ===========================================================
 
 async function loadCalendarConfiguration() {
@@ -491,7 +535,7 @@ async function loadCalendarConfiguration() {
 }
 
 // ===========================================================
-// 5. INICIALIZACIÓN AL CARGAR EL DOM
+// 6. INICIALIZACIÓN AL CARGAR EL DOM
 // ===========================================================
 
 document.addEventListener("DOMContentLoaded", loadCalendarConfiguration);
