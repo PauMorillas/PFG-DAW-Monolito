@@ -314,13 +314,13 @@ async function handleSlotSelection(info, config, calendar, toLocalISOString) {
       return;
     }
 
-    // --- VALIDACIÓN C: HORA ACTUAL (NOW) ---
+    // --- VALIDACIÓN B: HORA ACTUAL (NOW) ---
     if (!validateCurrentTime(startMs)) {
       calendar.unselect();
       return;
     }
 
-    // --- VALIDACIÓN B: COLISIONES (Solapamiento) ---
+    // --- VALIDACIÓN C: COLISIONES (Solapamiento) ---
     if (!validateCollisions(startMs, endMs, calendar)) { // <--- Esta función debe incluir el logging corregido
       calendar.unselect();
       return;
