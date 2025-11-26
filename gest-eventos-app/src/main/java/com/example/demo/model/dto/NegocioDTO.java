@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.example.demo.repository.entity.Dominio;
 import com.example.demo.repository.entity.Gerente;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Servicio;
@@ -30,10 +31,12 @@ public class NegocioDTO implements Serializable {
 	private String correoGerente; // Correo del Gerente que vendrá desde Angular
 	private GerenteDTO gerenteDTO;
 	private List<ServicioDTO> listaServiciosDTO;
+	private List<DominioDTO> listaDominiosDTO;
 
 	public NegocioDTO() {
 		this.gerenteDTO = new GerenteDTO();
 		this.listaServiciosDTO = new ArrayList<ServicioDTO>();
+		this.listaDominiosDTO = new ArrayList<DominioDTO>();
 	}
 
 	@Override
@@ -53,7 +56,7 @@ public class NegocioDTO implements Serializable {
 		return Objects.hash(id);
 	}
 
-	public static NegocioDTO convertToDTO(Negocio negocio, GerenteDTO gerenteDTO, List<ServicioDTO> listaServiciosDTO) {
+	public static NegocioDTO convertToDTO(Negocio negocio, GerenteDTO gerenteDTO, List<ServicioDTO> listaServiciosDTO, List<DominioDTO> listaDominiosDTO) {
 		NegocioDTO dto = new NegocioDTO();
 
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -68,13 +71,14 @@ public class NegocioDTO implements Serializable {
 		// Asignación de dependencias (relaciones N:1 y 1:N)
 		dto.setGerenteDTO(gerenteDTO);
 		dto.setListaServiciosDTO(listaServiciosDTO);
+		dto.setListaDominiosDTO(listaDominiosDTO);
 
 		return dto;
 	}
 
 	// La lista de Servicios (relación 1:N) no se mapea en el convertToEntity
 	// para evitar la gestión compleja de colecciones en el mapeo básico y referencias circulares.
-	public static Negocio convertToEntity(NegocioDTO negocioDTO, Gerente gerente, List<Servicio> listaServicios) {
+	public static Negocio convertToEntity(NegocioDTO negocioDTO, Gerente gerente, List<Servicio> listaServicios, List<Dominio> listaDominios) {
 		Negocio negocio = new Negocio();
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -89,6 +93,7 @@ public class NegocioDTO implements Serializable {
 		// Asignación de la Entidad completa (FK)
 		negocio.setGerente(gerente);
 		negocio.setListaServicios(listaServicios);
+		negocio.setListaDominios(listaDominios);
 		return negocio;
 	}
 

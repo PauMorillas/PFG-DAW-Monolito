@@ -13,6 +13,7 @@ import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.dao.NegocioRepository;
+import com.example.demo.repository.entity.Dominio;
 import com.example.demo.repository.entity.Gerente;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Servicio;
@@ -28,6 +29,9 @@ public class NegocioServiceImpl implements NegocioService {
     @Autowired
     private GerenteRepository gerenteRepository;
 
+    @Autowired
+    private DominioService dominioService;
+
     @Override
     public NegocioDTO findById(Long id) {
         Negocio negocio = negocioRepository.findById(id)
@@ -35,7 +39,7 @@ public class NegocioServiceImpl implements NegocioService {
 
         // Convertimos el gerente a DTO (solo datos básicos, sin lista de negocios)
         GerenteDTO gerenteDTO = GerenteDTO.convertToDTO(negocio.getGerente());
-        
+
         // Mapear la lista de servicios del negocio
         List<ServicioDTO> listaServiciosDTO = new ArrayList<>();
         listaServiciosDTO = negocio.getListaServicios().stream()
@@ -43,7 +47,8 @@ public class NegocioServiceImpl implements NegocioService {
                 .collect(Collectors.toList());
 
         // Devolvemos el DTO final con la lista de servicios mapeada
-        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO);
+        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO, null);
+        // TODO: MAPEAR LA LISTA DE DOMINIOS
     }
 
     @Override
@@ -57,10 +62,12 @@ public class NegocioServiceImpl implements NegocioService {
                 .orElseThrow(() -> new RuntimeException("Gerente no encontrado"));
 
         List<Servicio> servicios = new ArrayList<>();
-
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, servicios);
+        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, servicios, null);
 
         negocioRepository.save(negocio);
+
+        // Guardamos los dominios usando DominioService
+        dominioService.saveAll(negocioDTO.getListaDominiosDTO(), negocio);
     }
 
     @Override
@@ -68,7 +75,16 @@ public class NegocioServiceImpl implements NegocioService {
         Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
         negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
 
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, negocioOpt.get().getGerente(), negocioOpt.get().getListaServicios());
-        negocioRepository.save(negocio);
+        Negocio negocioExistente = negocioOpt.get();
+
+        Negocio negocioActualizado = NegocioDTO.convertToEntity(
+                negocioDTO,
+                negocioExistente.getGerente(),
+                negocioExistente.getListaServicios(),
+                negocioExistente.getListaDominios());
+
+        negocioRepository.save(negocioActualizado);
+        // Actualizamos los dominios usando DominioService
+        dominioService.updateAll(negocioDTO.getListaDominiosDTO(), negocioActualizado);
     }
 }

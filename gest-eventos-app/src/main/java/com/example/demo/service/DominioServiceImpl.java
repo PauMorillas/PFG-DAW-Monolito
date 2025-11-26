@@ -4,10 +4,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import com.example.demo.model.dto.DominioDTO;
+import com.example.demo.repository.dao.CustomDominioRepository;
+import com.example.demo.repository.entity.Dominio;
+import com.example.demo.repository.entity.Negocio;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +39,9 @@ public class DominioServiceImpl implements DominioService {
     private String defaultDomains;
 
     private final RestTemplate restTemplate;
+
+    @Autowired
+    private CustomDominioRepository dominioRepository;
 
     /**
      * Llama al endpoint /allowed-domains que devuelve un texto plano con dominios
@@ -93,5 +102,55 @@ public class DominioServiceImpl implements DominioService {
             return Arrays.asList("http://localhost:4200");
         }
         return parsed;
+    }
+
+    // =========================================================
+    // Escritura / sincronización de dominios (POST /save-domain)
+    // =========================================================
+    @Override
+    public void guardarDominioEnLaravel(Dominio dominio) {
+        String endpoint = apiUrl + "/save-domain";
+
+        String body = String.format("{\"dominio\":\"%s\",\"descripcion\":\"%s\"}",
+                dominio.getDominio(),
+                dominio.getDescripcion() != null ? dominio.getDescripcion() : "");
+
+        try {
+            restTemplate.postForEntity(endpoint, body, String.class);
+            log.info("Dominio sincronizado correctamente en Laravel: {}", dominio.getDominio());
+        } catch (Exception e) {
+            log.error("Error sincronizando dominio con Laravel: {}", dominio.getDominio(), e);
+            // Opcional: marcar dominio como inactivo localmente si falla
+            dominio.setActivo(false);
+        }
+    }
+
+    @Override
+    public void saveAll(List<DominioDTO> dominioDTOs, Negocio negocio) {
+        if (dominioDTOs == null)
+            return;
+
+        for (DominioDTO dto : dominioDTOs) {
+            Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
+            guardarDominioEnLaravel(dominio);
+            dominioRepository.save(dominio);
+        }
+    }
+
+    @Override
+    public void updateAll(List<DominioDTO> dominioDTOs, Negocio negocio) {
+        System.out.println("dominioDTOs: " + dominioDTOs);
+        log.info(dominioDTOs.toString());
+        if (dominioDTOs == null)
+            return;
+
+        // Para simplificar: borramos los existentes y guardamos los nuevos
+        dominioRepository.deleteAll(negocio.getListaDominios());
+
+        for (DominioDTO dto : dominioDTOs) {
+            Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
+            guardarDominioEnLaravel(dominio);
+            dominioRepository.save(dominio);
+        }
     }
 }

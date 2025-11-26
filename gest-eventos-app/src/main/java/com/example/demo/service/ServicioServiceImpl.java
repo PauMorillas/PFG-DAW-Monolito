@@ -45,7 +45,7 @@ public class ServicioServiceImpl implements ServicioService {
 		// 3. Mapear el Negocio una sola vez para inyectarlo en cada ServicioDTO
 		// Pasamos null como lista de servicios para evitar recursión y confusiones
 		// innecesarias.
-		NegocioDTO negocioDTO = NegocioDTO.convertToDTO(negocio, gerenteDTO, null);
+		NegocioDTO negocioDTO = NegocioDTO.convertToDTO(negocio, gerenteDTO, null, null);
 
 		// 4. Obtener los Servicios de ese Negocio
 		List<Servicio> servicios = servicioRepository.findAllByNegocio_Id(idNegocio);
@@ -73,7 +73,7 @@ public class ServicioServiceImpl implements ServicioService {
 
 		// 2. Obtener el Negocio asociado
 		// Ya que la entidad Servicio tiene el Negocio como campo podemos hacer
-		NegocioDTO negocioDTO = NegocioDTO.convertToDTO(servicio.getNegocio(), null, null);
+		NegocioDTO negocioDTO = NegocioDTO.convertToDTO(servicio.getNegocio(), null, null, null);
 
 		// 3. Mapear la entidad a DTO, incluyendo el Negocio
 		ServicioDTO servicioDTO = ServicioDTO.convertToDTO(servicio, negocioDTO, null);
