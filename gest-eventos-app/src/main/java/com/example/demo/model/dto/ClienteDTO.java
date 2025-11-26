@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.example.demo.model.Rol;
 import com.example.demo.repository.entity.Cliente;
 import lombok.Data;
 
@@ -17,10 +18,13 @@ public class ClienteDTO implements Serializable {
 	private String email;
 	private String telf;
 	private String pass;
+	private Rol rol;
+
 	private List<ReservaDTO> listaReservasDTO;
 
 	public ClienteDTO() {
 		this.listaReservasDTO = new ArrayList<ReservaDTO>();
+		this.rol = Rol.CLIENTE;
 	}
 
 	@Override
@@ -48,6 +52,7 @@ public class ClienteDTO implements Serializable {
 		cliDTO.setTelf(cliente.getTelf());
 		cliDTO.setPass(cliente.getPass());
 		cliDTO.setPass(cliente.getPass());
+		cliDTO.setRol(cliente.getRol());
 
 		return cliDTO;
 	}
@@ -59,7 +64,8 @@ public class ClienteDTO implements Serializable {
 		cliente.setEmail(clienteDTO.getEmail());
 		cliente.setTelf(clienteDTO.getTelf());
 		cliente.setPass(clienteDTO.getPass());
-
+		cliente.setRol(clienteDTO.getRol());
+		
 		return cliente;
 	}
 

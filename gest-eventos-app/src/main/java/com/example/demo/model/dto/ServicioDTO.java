@@ -5,14 +5,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.math.BigDecimal;
 
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Reserva;
 import com.example.demo.repository.entity.Servicio;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.Data;
 
 @Data
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class ServicioDTO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -23,6 +27,7 @@ public class ServicioDTO implements Serializable {
 	private String ubicacion;
 	private LocalDateTime fechaCreacion;
 	private int duracionMinutos;
+	private Double coste;
 	private NegocioDTO negocioDTO;
 	private List<ReservaDTO> listaReservasDTO;
 
@@ -60,8 +65,10 @@ public class ServicioDTO implements Serializable {
 		servicioDTO.setUbicacion(servicio.getUbicacion());
 		servicioDTO.setFechaCreacion(servicio.getFechaCreacion());
 		servicioDTO.setDuracionMinutos(servicio.getDuracionMinutos());
-		
-		// NOTA: La entidad Negocio (FK) debe ser establecida en el Service Layer, pasando por parámetro el negocio convertido
+		// De BigDecimal a Double
+		servicioDTO.setCoste(servicio.getCoste() != null ? servicio.getCoste().doubleValue() : null);
+		// NOTA: La entidad Negocio (FK) debe ser establecida en el Service Layer,
+		// pasando por parámetro el negocio convertido
 		servicioDTO.setNegocioDTO(negocioDTO);
 
 		servicioDTO.setListaReservasDTO(listaReservasDTO);
@@ -72,20 +79,22 @@ public class ServicioDTO implements Serializable {
 	// TODO: segurmanete haya que buscar otra estrategia con la conversion de las
 	// reservas a ese servicio
 	public static Servicio convertToEntity(ServicioDTO servicioDTO, Negocio negocio, List<Reserva> listaReservas) {
-        Servicio servicio = new Servicio();
-        
-        servicio.setId(servicioDTO.getId());
-        servicio.setTitulo(servicioDTO.getTitulo());
-        servicio.setDescripcion(servicioDTO.getDescripcion());
-        servicio.setUbicacion(servicioDTO.getUbicacion());
-        servicio.setFechaCreacion(servicioDTO.getFechaCreacion());
-        servicio.setDuracionMinutos(servicioDTO.getDuracionMinutos());
-        
-        // NOTA: La entidad Negocio (FK) debe ser establecida en el Service Layer:
-        servicio.setNegocio(negocio);
-        servicio.setListaReservas(listaReservas);
+		Servicio servicio = new Servicio();
 
-        return servicio;
+		servicio.setId(servicioDTO.getId());
+		servicio.setTitulo(servicioDTO.getTitulo());
+		servicio.setDescripcion(servicioDTO.getDescripcion());
+		servicio.setUbicacion(servicioDTO.getUbicacion());
+		servicio.setFechaCreacion(servicioDTO.getFechaCreacion());
+		servicio.setDuracionMinutos(servicioDTO.getDuracionMinutos());
+		// De double a BigDecimal
+		servicio.setCoste(servicioDTO.getCoste() != null ? BigDecimal.valueOf(servicioDTO.getCoste()) : BigDecimal.ZERO);
+
+		// NOTA: La entidad Negocio (FK) debe ser establecida en el Service Layer:
+		servicio.setNegocio(negocio);
+		servicio.setListaReservas(listaReservas);
+
+		return servicio;
 	}
 
 }

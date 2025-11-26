@@ -7,3 +7,14 @@ body {
   height: 90vh;
   border: none;
 }
+
+/* Estilos para las casillas deshabilitadas */
+.fc-day-disabled {
+  background-color: #f0f0f0 !important;
+  opacity: 0.5;
+  pointer-events: none !important;
+}
+
+.fc-day-disabled .fc-daygrid-day-number {
+  color: #888 !important;
+}

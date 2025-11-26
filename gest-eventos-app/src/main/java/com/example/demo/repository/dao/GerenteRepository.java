@@ -9,5 +9,5 @@ import com.example.demo.repository.entity.Gerente;
 
 @Repository
 public interface GerenteRepository extends JpaRepository<Gerente, Long> {
-	Optional<Gerente> findByCorreoElec(String correoElec);
+	Optional<Gerente> findByEmail(String correoElec);
 }

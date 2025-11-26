@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,10 +29,7 @@ public class SecurityConfig {
 	@Value("${api.secret}")
 	private final String apiToken;
 
-	private final DominioService dominioService;
-
 	public SecurityConfig(@Lazy DominioService dominioService, @Value("${api.secret}") String apiToken) {
-		this.dominioService = dominioService;
 		this.apiToken = apiToken;
 	}
 
@@ -65,12 +61,13 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/api/**", configuration);
+		source.registerCorsConfiguration("/public/api/**", configuration);
 		return source;
 	}
 
@@ -78,14 +75,17 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-				.cors() // Usará automáticamente el CorsConfigurationSource del CorsConfig
+				.cors()
 				.and()
 				.headers(headers -> headers
 						.frameOptions(frameOptions -> frameOptions.disable()) // No bloquear iframes
 				)
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(
-								"/api/clientes/registro",
+								"/api/clientes/**",
+								"/api/gerentes/**",
+								"/api/servicios/**",
+								"/api/reservas/**",
 								"/public/**",
 								"/register",
 								"/public/api/calendario/**",
@@ -95,17 +95,15 @@ public class SecurityConfig {
 								"/js/**",
 								"/login",
 								"/error",
-								"/favicon.ico")
+								"/favicon.ico",
+								"/api/negocios/**")
 						.permitAll()
 						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
 						.anyRequest().authenticated())
-				.formLogin(form -> form
-						.loginPage("/login")
-						.defaultSuccessUrl("/home", true)
-						.permitAll())
-				.logout(logout -> logout.permitAll())
+				.formLogin().disable() // Desactiva la autenticación de spring
+				.logout().disable() // Desactiva el logout automatico de spring
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/clientes/registro", "/mail/**", "/public/**"));
+						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**", "/api/servicios/**", "/api/reservas/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();

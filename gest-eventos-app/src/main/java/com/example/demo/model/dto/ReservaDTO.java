@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.example.demo.model.Estado;
+import com.example.demo.repository.entity.Reserva;
 
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,6 +26,18 @@ public class ReservaDTO implements Serializable {
 	public ReservaDTO() {
 		this.clienteDTO = new ClienteDTO();
 		this.servicioDTO = new ServicioDTO();
+	}
+
+	public static ReservaDTO convertToDTO(Reserva reserva, ClienteDTO clienteDTO, ServicioDTO servicioDTO) {
+		ReservaDTO reservaDTO = new ReservaDTO();
+		reservaDTO.setId(reserva.getId());
+		reservaDTO.setFechaInicio(reserva.getFechaInicio());
+		reservaDTO.setFechaFin(reserva.getFechaFin());
+		reservaDTO.setEstado(reserva.getEstado());
+
+		reservaDTO.setClienteDTO(clienteDTO);
+		reservaDTO.setServicioDTO(servicioDTO);
+		return reservaDTO;
 	}
 
 	@Override

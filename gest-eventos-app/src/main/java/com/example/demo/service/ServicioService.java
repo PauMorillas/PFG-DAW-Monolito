@@ -11,9 +11,13 @@ import com.example.demo.model.dto.ServicioDTO;
 public interface ServicioService {
 	List<ServicioDTO> getServiciosByNegocio(Long idNegocio);
 
-	ServicioDTO findServicioById(Long idServicio);
+	ServicioDTO findById(Long idServicio);
 
 	ServicioConfigDTO getConfigReserva(Long idServicio);
 
-	// TODO: métodos CRUD básicos (guardar, actualizar, eliminar)
+	void update(ServicioDTO servicioDTO);
+
+	void delete(Long idServicio);
+
+	void save(ServicioDTO servicioDTO);
 }

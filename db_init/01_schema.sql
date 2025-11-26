@@ -22,26 +22,28 @@ CREATE TABLE gerente(
 	id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50),
     correo_elec VARCHAR(100) UNIQUE NOT NULL,
-	pass VARCHAR(125) NOT NULL,
-	telf CHAR(9)
+	pass_hash VARCHAR(125) NOT NULL,
+	telf CHAR(9),
+    rol ENUM('CLIENTE', 'GERENTE') NOT NULL DEFAULT 'GERENTE'
 );
 
--- ====================================================================
--- TABLA NEGOCIO (La Tienda o Empresa física)
--- ====================================================================
-CREATE TABLE negocio(
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50),
-    correo_elec VARCHAR(100) UNIQUE NOT NULL,
-    telf_contacto CHAR(9),
-    hora_apertura TIME,
-    hora_cierre TIME,
-    
-    id_gerente INT NOT NULL,
-    
-    CONSTRAINT FK_UsuarioNegocio FOREIGN KEY (id_gerente)
-    REFERENCES gerente(id)
-);
+    -- ====================================================================
+    -- TABLA NEGOCIO (La Tienda o Empresa física)
+    -- ====================================================================
+    CREATE TABLE negocio(
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        nombre VARCHAR(50),
+        correo_elec VARCHAR(100) UNIQUE NOT NULL,
+        telf_contacto CHAR(9),
+        hora_apertura TIME,
+        hora_cierre TIME,
+        dias_apertura VARCHAR(20) NOT NULL DEFAULT '1,2,3,4,5,6,7', -- Por defecto un negocio abre todos los dias de la semana (1 = Lunes, 2 = Martes, etc.)
+        
+        id_gerente INT NOT NULL,
+        
+        CONSTRAINT FK_UsuarioNegocio FOREIGN KEY (id_gerente)
+        REFERENCES gerente(id)
+    );
 
 -- ====================================================================
 -- TABLA CLIENTE (Clientes de nuestros clientes - NO inician sesión)
@@ -51,7 +53,8 @@ CREATE TABLE cliente(
     nombre VARCHAR(100) NOT NULL,
     correo_elec VARCHAR(100), -- No es único aquí, ya que dos negocios pueden tener clientes con el mismo email.
     pass_hash VARCHAR(125),
-    telf CHAR(9)
+    telf CHAR(9),
+    rol ENUM('CLIENTE', 'GERENTE') NOT NULL DEFAULT 'CLIENTE'
 );
 
 -- ====================================================================
@@ -62,6 +65,7 @@ CREATE TABLE servicio(
     titulo VARCHAR(75) NOT NULL,
     descripcion VARCHAR(125),
     ubicacion VARCHAR(125),
+    coste DECIMAL(10,2) NOT NULL DEFAULT 0.00, -- Por defecto 0.00 (Gratis)
     
     fecha_creacion DATETIME DEFAULT NOW(),
     duracion_min INT NOT NULL, -- Duración estándar del servicio en minutos.

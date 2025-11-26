@@ -33,6 +33,7 @@ public class PublicController {
 	@Autowired
 	private ReservaService reservaService;
 
+	// TODO: CAMBIAR AL CONTROLLER DE SERVICIOS.
 	// Lógica: Mostrar la lista de servicios de un negocio para incrustar.
 	@GetMapping("/servicios/{idNegocio}")
 	public ModelAndView getServiciosByNegocioId(@PathVariable Long idNegocio) {
@@ -46,7 +47,6 @@ public class PublicController {
 	public ModelAndView renderCalendarByServicio(@PathVariable Long idServicio) {
 		// Lógica: Mostrar el calendario
 		ModelAndView mav = new ModelAndView("public/calendar-view");
-
 		return mav;
 	}
 
@@ -67,6 +67,7 @@ public class PublicController {
 		}
 		catch (Exception e) {
 			// Captura otros errores (ej. 500)
+			e.printStackTrace();
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al procesar la reserva: " + e.getMessage());
 	    }
 	}

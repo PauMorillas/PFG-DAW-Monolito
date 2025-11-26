@@ -5,23 +5,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.example.demo.model.Rol;
 import com.example.demo.repository.entity.Gerente;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.Data;
 
 @Data
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class GerenteDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private Long id;
 	private String nombre;
+	@JsonProperty("email")
 	private String correoElec;
 	private String pass;
 	private String telf;
+	private Rol rol;
 	private List<NegocioDTO> listaNegociosDTO;
 
 	public GerenteDTO() {
 		this.listaNegociosDTO = new ArrayList<NegocioDTO>();
+		this.rol = Rol.GERENTE;
 	}
 
 	@Override
@@ -46,8 +54,9 @@ public class GerenteDTO implements Serializable {
 		GerenteDTO dto = new GerenteDTO();
 		dto.setId(gerente.getId());
 		dto.setNombre(gerente.getNombre());
-		dto.setCorreoElec(gerente.getCorreoElec());
+		dto.setCorreoElec(gerente.getEmail());
 		dto.setTelf(gerente.getTelf());
+		dto.setRol(gerente.getRol());
 
 		return dto;
 	}
@@ -57,11 +66,11 @@ public class GerenteDTO implements Serializable {
 		Gerente gerente = new Gerente();
 		gerente.setId(gerenteDTO.getId());
 		gerente.setNombre(gerenteDTO.getNombre());
-		gerente.setCorreoElec(gerenteDTO.getCorreoElec());
+		gerente.setEmail(gerenteDTO.getCorreoElec());
 		gerente.setPass(gerenteDTO.getPass());
 		gerente.setTelf(gerenteDTO.getTelf());
+		gerente.setRol(gerenteDTO.getRol());
 
 		return gerente;
 	}
-
 }

@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import com.example.demo.model.Estado;
 import com.example.demo.model.Mail;
 import com.example.demo.model.dto.ClienteDTO;
 import com.example.demo.model.dto.EventoCalendarioDTO;
+import com.example.demo.model.dto.ReservaDTO;
 import com.example.demo.model.dto.ReservaRequestDTO;
 import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.PreReservaRepository;
@@ -45,8 +47,9 @@ public class ReservaServiceImpl implements ReservaService {
 	@Autowired
 	private MailService mailService;
 
-	private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-	private static final long EXPIRATION_MINUTES = 30; // Token válido por 30 minutos
+	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
+			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
 
 	// =======================================================
 	// I. CREACIÓN DE PRE-RESERVA (CONCURRENCIA CONTROLADA)
@@ -54,30 +57,37 @@ public class ReservaServiceImpl implements ReservaService {
 
 	// ANOTACIÓN CLAVE: SERIALIZABLE previene que dos transacciones concurrentes
 	// lean el mismo slot como disponible antes de que la primera lo bloquee.
+	@Override
 	@Transactional(isolation = Isolation.SERIALIZABLE)
 	public void crearPreReserva(ReservaRequestDTO reservaRequestDTO) throws ResponseStatusException {
 
-		// 1. Parsear y Estandarizar Fechas para manejar el +02:00
-		OffsetDateTime startOffset = OffsetDateTime.parse(reservaRequestDTO.getFechaInicio(), ISO_FORMATTER);
-		OffsetDateTime endOffset = OffsetDateTime.parse(reservaRequestDTO.getFechaFin(), ISO_FORMATTER);
+		// 1. Parsear y Estandarizar Fechas
+		// Usamos LocalDateTime.parse() con el formatter exacto para aceptar
+		// "2025-11-25T12:30:00.000" y evitar errores al parsear.
+		try {
+			// Convierte el String a LocalDateTime
+			LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
+			LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
 
-		// Convertir a LocalDateTime (eliminando el offset, pero manteniendo la hora
-		// local del usuario)
-		LocalDateTime start = startOffset.toLocalDateTime();
-		LocalDateTime end = endOffset.toLocalDateTime();
+			// 2. Validación de disponibilidad
+			// Lanza una excepción si el slot ya está ocupado.
+			validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
 
-		// 2. Validación de disponibilidad
-		// Lanza una excepción si el slot ya está ocupado (por reserva activa o pre-reserva vigente).
-		validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
+			// 3. Crear y guardar la pre-reserva
+			PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
+			preReserva = preReservaRepository.save(preReserva);
 
-		// 3. Crear y guardar la pre-reserva
-		PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
-		preReserva = preReservaRepository.save(preReserva);
+			// 4. Envío del correo
+			enviarMailConfirmacion(preReserva);
 
-		// 4. Envío del correo
-		enviarMailConfirmacion(preReserva);
+		} catch (DateTimeParseException e) {
+			// Captura específicamente el error de parsing y lo relanza como un error del
+			// cliente (400)
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage());
+		}
 	}
-
 
 	// =======================================================
 	// II. LÓGICA DE VALIDACIÓN Y EXCEPCIONES
@@ -137,7 +147,7 @@ public class ReservaServiceImpl implements ReservaService {
 		// Obtenemos la entidad Cliente persistida
 		ClienteDTO clienteDTO = clienteService.findOrCreate(tempDto);
 		// 3. OBTENER EL SERVICIODTO
-		ServicioDTO servicioDTO = servicioService.findServicioById(preReserva.getIdServicio());
+		ServicioDTO servicioDTO = servicioService.findById(preReserva.getIdServicio());
 
 		Cliente cliente = ClienteDTO.convertToEntity(clienteDTO);
 		Servicio servicio = ServicioDTO.convertToEntity(servicioDTO, null, null);
@@ -162,16 +172,69 @@ public class ReservaServiceImpl implements ReservaService {
 
 	// Devuelve las reservas de un determinado servicio
 	@Override
-	public List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio) {
+	public List<EventoCalendarioDTO> getAllReservasByServicioId(Long idServicio) {
 		// 1. Obtener el ID del Negocio asociado al servicio
 		Long idNegocio = servicioRepository.findIdNegocioByServicioId(idServicio)
 				.orElseThrow(() -> new EntityNotFoundException("Servicio no encontrado."));
-		
+
 		String colorEvento = "#3B83BD";
-		
-		// Una vez sabemos a que negocio pertenece el servicio, podemos obtener sus reservas
+
+		// Una vez sabemos a que negocio pertenece el servicio, podemos obtener sus
+		// reservas
 		return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA).stream()
 				.map(r -> EventoCalendarioDTO.convertToEvento(r, colorEvento)).toList();
+	}
+
+	@Override
+	public List<EventoCalendarioDTO> getReservasByServicioId(Long idServicio) {
+		String colorEvento = "#3B83BD";
+
+		return reservaRepository
+				.findAllByServicioIdAndEstado(idServicio, Estado.ACTIVA)
+				.stream()
+				.map(r -> EventoCalendarioDTO.convertToEvento(r, colorEvento))
+				.toList();
+	}
+
+	@Override
+	public List<EventoCalendarioDTO> getAllReservasByNegocioId(Long idNegocio) {
+		String colorEvento = "#3B83BD"; // o cambiar según lógica
+
+		return reservaRepository.findAllByNegocioId(idNegocio, Estado.ACTIVA)
+				.stream()
+				.map(reserva -> EventoCalendarioDTO.convertToEvento(reserva, colorEvento))
+				.toList();
+	}
+
+	// Añadir en la clase ReservaServiceImpl:
+	@Override
+	@Transactional(readOnly = true)
+	public ReservaDTO findById(Long idReserva) {
+		Reserva reserva = reservaRepository.findById(idReserva)
+				.orElseThrow(() -> new EntityNotFoundException("Reserva con ID " + idReserva + " no encontrada."));
+
+		ClienteDTO cliente = ClienteDTO.convertToDTO(reserva.getCliente());
+		ServicioDTO servicioDTO = ServicioDTO.convertToDTO(reserva.getServicio(), null, null);
+
+		return ReservaDTO.convertToDTO(reserva, cliente, servicioDTO);
+	}
+
+	@Override
+	public ReservaDTO updateEstado(Long id, Estado estado) {
+		Reserva reserva = reservaRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada"));
+
+		reserva.setEstado(estado);
+		reservaRepository.save(reserva);
+
+		ClienteDTO clienteDTO = ClienteDTO.convertToDTO(reserva.getCliente());
+		ServicioDTO servicioDTO = ServicioDTO.convertToDTO(reserva.getServicio(), null, null);
+
+		if (estado == Estado.CANCELADA) {
+			enviarMailCancelacion(reserva, clienteDTO, servicioDTO);
+		}
+		
+		return ReservaDTO.convertToDTO(reserva, clienteDTO, servicioDTO);
 	}
 
 	// =======================================================
@@ -194,7 +257,7 @@ public class ReservaServiceImpl implements ReservaService {
 
 	private String buildConfirmationLink(String token) {
 		// TODO: **IMPORTANTE:** Reemplaza baseUrl con la URL real de producción
-		String baseUrl = "http://localhost:8080";
+		String baseUrl = "http://localhost:8081";
 		return baseUrl + "/public/reservas/confirmar?token=" + token;
 	}
 
@@ -214,6 +277,32 @@ public class ReservaServiceImpl implements ReservaService {
 				+ "Gracias por confiar en nosotros,\n" + "El equipo de Gestión de Reservas";
 
 		Mail mail = new Mail(preReserva.getCorreoElec(), "Confirma tu Reserva", mensaje);
+
+		mailService.enviarMail(mail);
+	}
+
+	private void enviarMailCancelacion(Reserva reserva, ClienteDTO clienteDTO, ServicioDTO servicioDTO) {
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+		// Obtiene el teléfono del negocio desde el servicio asociado a la reserva
+		String telefonoNegocio = reserva.getServicio().getNegocio().getTelfContacto();
+
+		String mensaje = "Hola " + clienteDTO.getNombre() + ",\n\n"
+				+ "Queremos informarte que tu reserva ha sido cancelada por el gerente.\n\n"
+				+ "Aquí tienes los detalles de tu reserva:\n\n"
+				+ "🧾 Servicio: " + servicioDTO.getTitulo() + "\n"
+				+ "📅 Inicio: " + reserva.getFechaInicio().format(formatter) + "\n"
+				+ "📅 Fin: " + reserva.getFechaFin().format(formatter) + "\n"
+				+ "📌 Estado actual: CANCELADA\n\n"
+				+ "Si necesitas más información o quieres volver a reservar, puedes ponerte en contacto con nosotros:\n"
+				+ "📞 Teléfono del negocio: " + telefonoNegocio + "\n\n"
+				+ "Gracias por confiar en nosotros,\n"
+				+ "El equipo de Gestión de Reservas";
+
+		Mail mail = new Mail(
+				clienteDTO.getEmail(),
+				"Tu reserva ha sido cancelada",
+				mensaje);
 
 		mailService.enviarMail(mail);
 	}

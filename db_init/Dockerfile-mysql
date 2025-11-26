@@ -1,0 +1,13 @@
+# db_init/Dockerfile-mysql
+FROM mysql:8.0
+
+# Copiar configuración personalizada de MySQL
+COPY mysql.cnf /etc/mysql/conf.d/mysql.cnf
+
+# Ajustar permisos en Linux/Mac
+RUN chmod 644 /etc/mysql/conf.d/mysql.cnf || echo "⚠️ No se pudo cambiar permisos, probablemente Windows"
+
+# Copiar scripts de inicialización SQL
+COPY *.sql /docker-entrypoint-initdb.d/
+
+# Mantener entrypoint original de MySQL

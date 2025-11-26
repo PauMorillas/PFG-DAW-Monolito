@@ -17,7 +17,7 @@ services:
       retries: 5
     ports:
     # Mapea el puerto del host al puerto del contenedor 
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       # Persistencia de datos (Usa el volumen 'db_data')
       - db_data:/var/lib/mysql
@@ -62,9 +62,10 @@ services:
         - SPRING_DATASOURCE_URL=${DB_URL}
         - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
         - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-        - SV_PORT=${SV_PORT}
         - MAIL_USERNAME=${MAIL_USERNAME}
         - MAIL_PASSWORD=${MAIL_PASSWORD}
+        - SPRING_PROFILES_ACTIVE=dev
+        - SV_PORT=${SV_PORT}
         - API_DOMAIN_URL=${API_DOMAIN_URL}
         - API_SECRET=${API_SECRET}
         - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080"

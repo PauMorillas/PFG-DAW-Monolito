@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,11 @@ import com.example.demo.repository.dao.ServicioRepository;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Servicio;
 
+import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ServicioServiceImpl implements ServicioService {
 	@Autowired
 	private ServicioRepository servicioRepository;
@@ -52,17 +58,18 @@ public class ServicioServiceImpl implements ServicioService {
 				// Inyectamos el NegocioDTO (que ahora no tiene Servicios anidados)
 				.map(s -> ServicioDTO.convertToDTO(s, negocioDTO, listaReservasDTO)).collect(Collectors.toList());
 
-		// 7. Retornamos la lista de servicios. El NegocioDTO ya está contenido en cada uno.
+		// 7. Retornamos la lista de servicios. El NegocioDTO ya está contenido en cada
+		// uno.
 		return serviciosDTO;
 
 	}
 
 	@Override
-	public ServicioDTO findServicioById(Long idServicio) {
+	public ServicioDTO findById(Long idServicio) {
 
 		// 1. Obtener la entidad Servicio o lanzar una excepción de no encontrado
 		Servicio servicio = servicioRepository.findById(idServicio)
-				.orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + idServicio));
+				.orElseThrow(() -> new EntityNotFoundException("Servicio no encontrado con ID: " + idServicio));
 
 		// 2. Obtener el Negocio asociado
 		// Ya que la entidad Servicio tiene el Negocio como campo podemos hacer
@@ -78,13 +85,13 @@ public class ServicioServiceImpl implements ServicioService {
 	public ServicioConfigDTO getConfigReserva(Long idServicio) {
 		// 1. Obtener la información completa del servicio (incluyendo el Negocio
 		// asociado)
-		ServicioDTO servicioDTO = this.findServicioById(idServicio);
+		ServicioDTO servicioDTO = this.findById(idServicio);
 
 		// TODO: 2. Comprobar la activación (Validación de Negocio)
 		// Es CRUCIAL que el servicio esté activo para permitir reservas.
-//		 if (!servicioDTO.isActivo()) {
-//		 throw new ValidationException("El servicio no está activo para reservas.");
-//		 }
+		// if (!servicioDTO.isActivo()) {
+		// throw new ValidationException("El servicio no está activo para reservas.");
+		// }
 
 		// 3. Extraer la configuración necesaria del DTO
 		NegocioDTO negocioDTO = servicioDTO.getNegocioDTO();
@@ -94,12 +101,46 @@ public class ServicioServiceImpl implements ServicioService {
 			throw new RuntimeException("Error interno: Los datos del negocio son requeridos.");
 		}
 
-		// 4. Mapear a ServicioConfigDTO
+		// 4. Mapear a ServicioConfigDTO 
 		ServicioConfigDTO configDTO = new ServicioConfigDTO(servicioDTO.getId(), servicioDTO.getDuracionMinutos(),
-				negocioDTO.getHoraApertura(), negocioDTO.getHoraCierre());
+				negocioDTO.getHoraApertura(), negocioDTO.getHoraCierre(), negocioDTO.getDiasApertura());
 
 		// 5. Devolver el objeto de configuración (JSON)
 		return configDTO;
+	}
+
+	@Override
+	public void update(ServicioDTO servicioDTO) {
+
+		Servicio servicio = servicioRepository.findById(servicioDTO.getId())
+				.orElseThrow(() -> new EntityNotFoundException(
+						"No se pudo completar la actualización. Servicio no encontrado con ID: "
+								+ servicioDTO.getId()));
+
+		// Obtener el negocio real desde la BD (solo ID es suficiente)
+		Negocio negocio = negocioRepository.findById(servicioDTO.getNegocioDTO().getId())
+				.orElseThrow(() -> new EntityNotFoundException("Negocio no encontrado con ID: "
+						+ servicioDTO.getNegocioDTO().getId()));
+
+		servicioDTO.setFechaCreacion(LocalDateTime.now());
+
+		servicioRepository.save(ServicioDTO.convertToEntity(servicioDTO, negocio, servicio.getListaReservas()));
+	}
+
+	@Override
+	public void delete(Long idServicio) {
+		servicioRepository.deleteById(idServicio);
+	}
+
+	@Override
+	public void save(ServicioDTO servicioDTO) {
+		Optional<Negocio> negocio = negocioRepository.findById(servicioDTO.getNegocioDTO().getId());
+		if (negocio.isPresent()) {
+			// TODO: Validar info del servicio en el backend antes de guardar
+			servicioRepository.save(ServicioDTO.convertToEntity(servicioDTO, negocio.get(), new ArrayList<>()));
+		} else {
+			throw new EntityNotFoundException("Negocio no encontrado con ID: " + servicioDTO.getNegocioDTO().getId());
+		}
 	}
 
 }
