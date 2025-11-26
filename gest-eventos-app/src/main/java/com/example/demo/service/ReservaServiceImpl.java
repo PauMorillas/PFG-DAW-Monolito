@@ -19,6 +19,7 @@ import com.example.demo.model.Estado;
 import com.example.demo.model.Mail;
 import com.example.demo.model.dto.ClienteDTO;
 import com.example.demo.model.dto.EventoCalendarioDTO;
+import com.example.demo.model.dto.ReservaDTO;
 import com.example.demo.model.dto.ReservaRequestDTO;
 import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.PreReservaRepository;
@@ -46,7 +47,8 @@ public class ReservaServiceImpl implements ReservaService {
 	@Autowired
 	private MailService mailService;
 
-	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
+			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
 
 	// =======================================================
@@ -60,31 +62,31 @@ public class ReservaServiceImpl implements ReservaService {
 	public void crearPreReserva(ReservaRequestDTO reservaRequestDTO) throws ResponseStatusException {
 
 		// 1. Parsear y Estandarizar Fechas
-        // Usamos LocalDateTime.parse() con el formatter exacto para aceptar
-        // "2025-11-25T12:30:00.000" y evitar errores al parsear.
-        try {
-            // Convierte el String a LocalDateTime
-            LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
-            LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
+		// Usamos LocalDateTime.parse() con el formatter exacto para aceptar
+		// "2025-11-25T12:30:00.000" y evitar errores al parsear.
+		try {
+			// Convierte el String a LocalDateTime
+			LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
+			LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
 
-            // 2. Validación de disponibilidad
-            // Lanza una excepción si el slot ya está ocupado.
-            validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
+			// 2. Validación de disponibilidad
+			// Lanza una excepción si el slot ya está ocupado.
+			validarDisponibilidad(reservaRequestDTO.getIdServicio(), start, end);
 
-            // 3. Crear y guardar la pre-reserva
-            PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
-            preReserva = preReservaRepository.save(preReserva);
+			// 3. Crear y guardar la pre-reserva
+			PreReserva preReserva = buildPreReserva(reservaRequestDTO, start, end);
+			preReserva = preReservaRepository.save(preReserva);
 
-            // 4. Envío del correo
-            enviarMailConfirmacion(preReserva);
-            
-        } catch (DateTimeParseException e) {
-            // Captura específicamente el error de parsing y lo relanza como un error del cliente (400)
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST, 
-                "Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage()
-            );
-        }
+			// 4. Envío del correo
+			enviarMailConfirmacion(preReserva);
+
+		} catch (DateTimeParseException e) {
+			// Captura específicamente el error de parsing y lo relanza como un error del
+			// cliente (400)
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage());
+		}
 	}
 
 	// =======================================================
@@ -204,6 +206,37 @@ public class ReservaServiceImpl implements ReservaService {
 				.toList();
 	}
 
+	// Añadir en la clase ReservaServiceImpl:
+	@Override
+	@Transactional(readOnly = true)
+	public ReservaDTO findById(Long idReserva) {
+		Reserva reserva = reservaRepository.findById(idReserva)
+				.orElseThrow(() -> new EntityNotFoundException("Reserva con ID " + idReserva + " no encontrada."));
+
+		ClienteDTO cliente = ClienteDTO.convertToDTO(reserva.getCliente());
+		ServicioDTO servicioDTO = ServicioDTO.convertToDTO(reserva.getServicio(), null, null);
+
+		return ReservaDTO.convertToDTO(reserva, cliente, servicioDTO);
+	}
+
+	@Override
+	public ReservaDTO updateEstado(Long id, Estado estado) {
+		Reserva reserva = reservaRepository.findById(id)
+				.orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada"));
+
+		reserva.setEstado(estado);
+		reservaRepository.save(reserva);
+
+		ClienteDTO clienteDTO = ClienteDTO.convertToDTO(reserva.getCliente());
+		ServicioDTO servicioDTO = ServicioDTO.convertToDTO(reserva.getServicio(), null, null);
+
+		if (estado == Estado.CANCELADA) {
+			enviarMailCancelacion(reserva, clienteDTO, servicioDTO);
+		}
+		
+		return ReservaDTO.convertToDTO(reserva, clienteDTO, servicioDTO);
+	}
+
 	// =======================================================
 	// III. MÉTODOS AUXILIARES
 	// =======================================================
@@ -244,6 +277,32 @@ public class ReservaServiceImpl implements ReservaService {
 				+ "Gracias por confiar en nosotros,\n" + "El equipo de Gestión de Reservas";
 
 		Mail mail = new Mail(preReserva.getCorreoElec(), "Confirma tu Reserva", mensaje);
+
+		mailService.enviarMail(mail);
+	}
+
+	private void enviarMailCancelacion(Reserva reserva, ClienteDTO clienteDTO, ServicioDTO servicioDTO) {
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+		// Obtiene el teléfono del negocio desde el servicio asociado a la reserva
+		String telefonoNegocio = reserva.getServicio().getNegocio().getTelfContacto();
+
+		String mensaje = "Hola " + clienteDTO.getNombre() + ",\n\n"
+				+ "Queremos informarte que tu reserva ha sido cancelada por el gerente.\n\n"
+				+ "Aquí tienes los detalles de tu reserva:\n\n"
+				+ "🧾 Servicio: " + servicioDTO.getTitulo() + "\n"
+				+ "📅 Inicio: " + reserva.getFechaInicio().format(formatter) + "\n"
+				+ "📅 Fin: " + reserva.getFechaFin().format(formatter) + "\n"
+				+ "📌 Estado actual: CANCELADA\n\n"
+				+ "Si necesitas más información o quieres volver a reservar, puedes ponerte en contacto con nosotros:\n"
+				+ "📞 Teléfono del negocio: " + telefonoNegocio + "\n\n"
+				+ "Gracias por confiar en nosotros,\n"
+				+ "El equipo de Gestión de Reservas";
+
+		Mail mail = new Mail(
+				clienteDTO.getEmail(),
+				"Tu reserva ha sido cancelada",
+				mensaje);
 
 		mailService.enviarMail(mail);
 	}

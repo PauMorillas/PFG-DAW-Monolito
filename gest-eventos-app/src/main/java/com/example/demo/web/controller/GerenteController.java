@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -92,5 +93,36 @@ public class GerenteController {
 
 		return ResponseEntity.ok(gerenteOpt.getListaNegociosDTO());
 	}
+
+	/**
+     * Endpoint para actualizar completamente un Gerente.
+     * Corresponde a la llamada PUT /api/gerentes/{id}
+     */
+    @PutMapping("/api/gerentes/editar") // {id} mapea a la variable PathVariable
+    public ResponseEntity<Map<String, Object>> actualizarGerente(
+            @RequestBody GerenteDTO gerenteDTO) {
+
+        try {
+            gerenteService.update(gerenteDTO); // Asume que tu service tiene un método update
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Gerente actualizado correctamente");
+            // Devolver 200 OK para una actualización exitosa
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        } catch (ValidationException ex) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", ex.getMessage());
+            return ResponseEntity.badRequest().body(response);
+            
+        } catch (Exception ex) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Error interno al actualizar el Gerente: " + ex.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
 
 }

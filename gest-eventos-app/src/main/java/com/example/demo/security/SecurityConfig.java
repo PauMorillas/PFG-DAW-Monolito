@@ -61,7 +61,7 @@ public class SecurityConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 
@@ -85,6 +85,7 @@ public class SecurityConfig {
 								"/api/clientes/**",
 								"/api/gerentes/**",
 								"/api/servicios/**",
+								"/api/reservas/**",
 								"/public/**",
 								"/register",
 								"/public/api/calendario/**",
@@ -102,7 +103,7 @@ public class SecurityConfig {
 				.formLogin().disable() // Desactiva la autenticación de spring
 				.logout().disable() // Desactiva el logout automatico de spring
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**", "/api/servicios/**"));
+						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**", "/api/servicios/**", "/api/reservas/**"));
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();

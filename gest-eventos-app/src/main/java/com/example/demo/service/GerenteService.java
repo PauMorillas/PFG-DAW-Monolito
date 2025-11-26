@@ -7,6 +7,8 @@ import com.example.demo.model.dto.LoginResponseDTO;
 public interface GerenteService {
 	void save(GerenteDTO gerenteDTO);
 
+	void update(GerenteDTO gerenteDTO);
+
 	GerenteDTO findByEmail(String email);
 
     LoginResponseDTO login(LoginRequestDTO req);

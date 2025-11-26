@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,7 @@ public class GerenteServiceImpl implements GerenteService {
 	private GerenteRepository gerenteRepository;
 
 	@Autowired
-	private PasswordEncoder passwordEncoder;		
+	private PasswordEncoder passwordEncoder;
 
 	@Override
 	public void save(GerenteDTO gerenteDTO) {
@@ -98,7 +97,7 @@ public class GerenteServiceImpl implements GerenteService {
 			NegocioDTO negocioDTO = NegocioDTO.convertToDTO(negocio, null, null);
 			listaNegociosDTO.add(negocioDTO);
 			return negocioDTO;
-		}).collect(Collectors.toList()); 
+		}).collect(Collectors.toList());
 
 		gerenteDTO.setListaNegociosDTO(listaNegociosDTO);
 
@@ -112,7 +111,26 @@ public class GerenteServiceImpl implements GerenteService {
 		if (passwordEncoder.matches(req.getPassword(), gerente.getPass())) {
 			return new LoginResponseDTO(gerente.getEmail(), gerente.getRol());
 		} else {
-        	throw new EntityNotFoundException("El correo o la contraseña son incorrectos.");
+			throw new EntityNotFoundException("El correo o la contraseña son incorrectos.");
 		}
+	}
+
+	@Override
+	public void update(GerenteDTO gerenteDTO) {
+		// 1. Buscar la entidad existente por email
+		Gerente gerenteExistente = gerenteRepository.findByEmail(gerenteDTO.getCorreoElec())
+				.orElseThrow(() -> new EntityNotFoundException("Gerente no encontrado para actualizar."));
+		
+		gerenteExistente.setNombre(gerenteDTO.getNombre());
+		gerenteExistente.setTelf(gerenteDTO.getTelf());
+
+		if (gerenteDTO.getPass() != null && !gerenteDTO.getPass().isEmpty()) {
+			String newPassHash = passwordEncoder.encode(gerenteDTO.getPass());
+			gerenteExistente.setPass(newPassHash);
+		}
+
+		// 3. Guardar la entidad. Como ya es una entidad existente con un ID,
+		// JPA realiza un UPDATE.
+		gerenteRepository.save(gerenteExistente);
 	}
 }

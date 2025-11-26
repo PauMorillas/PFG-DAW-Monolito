@@ -94,5 +94,4 @@ public class DominioServiceImpl implements DominioService {
         }
         return parsed;
     }
-
 }
