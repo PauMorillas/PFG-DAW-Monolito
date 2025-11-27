@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.model.dto.DominioDTO;
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.model.dto.ServicioDTO;
@@ -46,8 +47,14 @@ public class NegocioServiceImpl implements NegocioService {
                 .map(servicio -> ServicioDTO.convertToDTO(servicio, null, null))
                 .collect(Collectors.toList());
 
+        // Mapear la lista de dominios
+        List<DominioDTO> listaDominiosDTO = negocio.getListaDominios()
+                .stream()
+                .map(d -> DominioDTO.convertToDTO(d, null))
+                .collect(Collectors.toList());
+
         // Devolvemos el DTO final con la lista de servicios mapeada
-        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO, null);
+        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO, listaDominiosDTO);
         // TODO: MAPEAR LA LISTA DE DOMINIOS
     }
 
@@ -58,15 +65,17 @@ public class NegocioServiceImpl implements NegocioService {
 
     @Override
     public void save(NegocioDTO negocioDTO) {
+        // 1. Obtener gerente
         Gerente gerente = gerenteRepository.findByEmail(negocioDTO.getCorreoGerente())
                 .orElseThrow(() -> new RuntimeException("Gerente no encontrado"));
 
-        List<Servicio> servicios = new ArrayList<>();
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, servicios, null);
+        // 2. Convertir el NegocioDTO en entidad SIN LISTA DE SERVICIOS NI DOMINIOS TODAVÍA
+        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, null, null);
 
-        negocioRepository.save(negocio);
+        // 3. Guardar primero el negocio (para generar el ID)
+        negocio = negocioRepository.save(negocio);
 
-        // Guardamos los dominios usando DominioService
+        // 4. Guardar los dominios y asignarles el negocio
         dominioService.saveAll(negocioDTO.getListaDominiosDTO(), negocio);
     }
 

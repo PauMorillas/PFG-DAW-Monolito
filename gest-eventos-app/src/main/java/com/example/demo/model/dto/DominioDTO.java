@@ -5,8 +5,8 @@ import java.util.Objects;
 
 import com.example.demo.repository.entity.Dominio;
 import com.example.demo.repository.entity.Negocio;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.Data;
@@ -21,7 +21,7 @@ public class DominioDTO implements Serializable {
     private String dominio;
     private String descripcion;
     private boolean activo;
-    @JsonBackReference
+    @JsonIgnore
     private NegocioDTO negocioDTO; // Guardamos solo el ID para evitar referencias circulares
 
     public DominioDTO() {

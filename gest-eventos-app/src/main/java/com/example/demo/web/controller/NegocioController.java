@@ -1,15 +1,20 @@
 package com.example.demo.web.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
 
+import com.example.demo.exception.DominioSyncException;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.service.NegocioService;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/negocios")
 public class NegocioController {
@@ -47,13 +53,22 @@ public class NegocioController {
         }
     }
 
+    // Excepciones controladas por el GlobalExceptioHandler
     @PutMapping("/{id}")
-    public ResponseEntity<NegocioDTO> update(@PathVariable Long id, @RequestBody NegocioDTO negocioDTO) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody NegocioDTO negocioDTO) {
         try {
             negocioService.update(negocioDTO);
             return ResponseEntity.ok().build();
+        } catch (DominioSyncException e) {
+            // Solo loggear mensaje, no stacktrace
+            log.warn("Error sincronizando dominio: {}", e.getDominio());
+            return ResponseEntity.status(422).body(Map.of(
+                    "error", "DOMINIO_DUPLICADO",
+                    "message", e.getMessage(),
+                    "dominio", e.getDominio()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
         }
     }
 
