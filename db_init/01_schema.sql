@@ -27,26 +27,43 @@ CREATE TABLE gerente(
     rol ENUM('CLIENTE', 'GERENTE') NOT NULL DEFAULT 'GERENTE'
 );
 
-    -- ====================================================================
-    -- TABLA NEGOCIO (La Tienda o Empresa física)
-    -- ====================================================================
-    CREATE TABLE negocio(
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        nombre VARCHAR(50),
-        correo_elec VARCHAR(100) UNIQUE NOT NULL,
-        telf_contacto CHAR(9),
-        hora_apertura TIME,
-        hora_cierre TIME,
-        dias_apertura VARCHAR(20) NOT NULL DEFAULT '1,2,3,4,5,6,7', -- Por defecto un negocio abre todos los dias de la semana (1 = Lunes, 2 = Martes, etc.)
-        
-        id_gerente INT NOT NULL,
-        
-        CONSTRAINT FK_UsuarioNegocio FOREIGN KEY (id_gerente)
-        REFERENCES gerente(id)
-    );
+-- ====================================================================
+-- TABLA NEGOCIO (La Tienda o Empresa física)
+-- ====================================================================
+CREATE TABLE negocio(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50),
+    correo_elec VARCHAR(100) UNIQUE NOT NULL,
+    telf_contacto CHAR(9),
+    hora_apertura TIME,
+    hora_cierre TIME,
+    dias_apertura VARCHAR(20) NOT NULL DEFAULT '1,2,3,4,5,6,7', -- Por defecto un negocio abre todos los dias de la semana (1 = Lunes, 2 = Martes, etc.)
+    
+    id_gerente INT NOT NULL,
+    
+    CONSTRAINT FK_UsuarioNegocio FOREIGN KEY (id_gerente)
+    REFERENCES gerente(id)
+);
 
 -- ====================================================================
--- TABLA CLIENTE (Clientes de nuestros clientes - NO inician sesión)
+-- TABLA CUSTOM_DOMINIO (Dominios permitidos para el negocio, para establecer relaciones en Spring)
+-- ====================================================================
+
+CREATE TABLE custom_dominio (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    dominio VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255),
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    negocio_id INT NOT NULL,
+
+    CONSTRAINT FK_NegocioCustomDominio FOREIGN KEY (negocio_id)
+        REFERENCES negocio(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- ====================================================================
+-- TABLA CLIENTE (Clientes de nuestros clientes)
 -- ====================================================================
 CREATE TABLE cliente(
     id INT PRIMARY KEY AUTO_INCREMENT,
