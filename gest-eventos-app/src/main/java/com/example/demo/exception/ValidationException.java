@@ -1,6 +1,6 @@
 package com.example.demo.exception;
 
-// Elegimos extender de RuntimeException (Excepción No Comprobada) para adherirnos a la
+// Elegií extender de RuntimeException (Excepción No Comprobada) para adherirnos a la
 // convención de Spring Boot para errores de negocio y validación.
 
 // 1. Integración Futura: Facilita la implementación posterior de un 

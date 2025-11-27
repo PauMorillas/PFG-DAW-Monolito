@@ -55,6 +55,9 @@ public class Negocio {
 	@OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Servicio> listaServicios;
 
+	@OneToMany(mappedBy = "negocio", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Dominio> listaDominios = new ArrayList<>();
+
 	public Negocio() {
 		this.gerente = new Gerente();
 		this.listaServicios = new ArrayList<Servicio>();

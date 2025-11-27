@@ -94,7 +94,7 @@ public class GerenteServiceImpl implements GerenteService {
 		List<NegocioDTO> listaNegociosDTO = new ArrayList<>();
 		gerente.getListaNegocios().stream().map(negocio -> {
 			// Mapear aqui los servicios
-			NegocioDTO negocioDTO = NegocioDTO.convertToDTO(negocio, null, null);
+			NegocioDTO negocioDTO = NegocioDTO.convertToDTO(negocio, null, null, null);
 			listaNegociosDTO.add(negocioDTO);
 			return negocioDTO;
 		}).collect(Collectors.toList());

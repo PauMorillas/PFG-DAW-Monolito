@@ -8,11 +8,13 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.model.dto.DominioDTO;
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.dao.NegocioRepository;
+import com.example.demo.repository.entity.Dominio;
 import com.example.demo.repository.entity.Gerente;
 import com.example.demo.repository.entity.Negocio;
 import com.example.demo.repository.entity.Servicio;
@@ -28,6 +30,9 @@ public class NegocioServiceImpl implements NegocioService {
     @Autowired
     private GerenteRepository gerenteRepository;
 
+    @Autowired
+    private DominioService dominioService;
+
     @Override
     public NegocioDTO findById(Long id) {
         Negocio negocio = negocioRepository.findById(id)
@@ -35,15 +40,22 @@ public class NegocioServiceImpl implements NegocioService {
 
         // Convertimos el gerente a DTO (solo datos básicos, sin lista de negocios)
         GerenteDTO gerenteDTO = GerenteDTO.convertToDTO(negocio.getGerente());
-        
+
         // Mapear la lista de servicios del negocio
         List<ServicioDTO> listaServiciosDTO = new ArrayList<>();
         listaServiciosDTO = negocio.getListaServicios().stream()
                 .map(servicio -> ServicioDTO.convertToDTO(servicio, null, null))
                 .collect(Collectors.toList());
 
+        // Mapear la lista de dominios
+        List<DominioDTO> listaDominiosDTO = negocio.getListaDominios()
+                .stream()
+                .map(d -> DominioDTO.convertToDTO(d, null))
+                .collect(Collectors.toList());
+
         // Devolvemos el DTO final con la lista de servicios mapeada
-        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO);
+        return NegocioDTO.convertToDTO(negocio, gerenteDTO, listaServiciosDTO, listaDominiosDTO);
+        // TODO: MAPEAR LA LISTA DE DOMINIOS
     }
 
     @Override
@@ -53,14 +65,18 @@ public class NegocioServiceImpl implements NegocioService {
 
     @Override
     public void save(NegocioDTO negocioDTO) {
+        // 1. Obtener gerente
         Gerente gerente = gerenteRepository.findByEmail(negocioDTO.getCorreoGerente())
                 .orElseThrow(() -> new RuntimeException("Gerente no encontrado"));
 
-        List<Servicio> servicios = new ArrayList<>();
+        // 2. Convertir el NegocioDTO en entidad SIN LISTA DE SERVICIOS NI DOMINIOS TODAVÍA
+        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, null, null);
 
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, servicios);
+        // 3. Guardar primero el negocio (para generar el ID)
+        negocio = negocioRepository.save(negocio);
 
-        negocioRepository.save(negocio);
+        // 4. Guardar los dominios y asignarles el negocio
+        dominioService.saveAll(negocioDTO.getListaDominiosDTO(), negocio);
     }
 
     @Override
@@ -68,7 +84,16 @@ public class NegocioServiceImpl implements NegocioService {
         Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
         negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
 
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, negocioOpt.get().getGerente(), negocioOpt.get().getListaServicios());
-        negocioRepository.save(negocio);
+        Negocio negocioExistente = negocioOpt.get();
+
+        Negocio negocioActualizado = NegocioDTO.convertToEntity(
+                negocioDTO,
+                negocioExistente.getGerente(),
+                negocioExistente.getListaServicios(),
+                negocioExistente.getListaDominios());
+
+        negocioRepository.save(negocioActualizado);
+        // Actualizamos los dominios usando DominioService
+        dominioService.updateAll(negocioDTO.getListaDominiosDTO(), negocioActualizado);
     }
 }

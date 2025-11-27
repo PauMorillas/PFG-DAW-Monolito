@@ -1,13 +1,26 @@
 package com.example.demo.service;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import com.example.demo.exception.DominioSyncException;
+import com.example.demo.model.dto.DominioDTO;
+import com.example.demo.repository.dao.CustomDominioRepository;
+import com.example.demo.repository.entity.Dominio;
+import com.example.demo.repository.entity.Negocio;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +46,9 @@ public class DominioServiceImpl implements DominioService {
     private String defaultDomains;
 
     private final RestTemplate restTemplate;
+
+    @Autowired
+    private CustomDominioRepository dominioRepository;
 
     /**
      * Llama al endpoint /allowed-domains que devuelve un texto plano con dominios
@@ -93,5 +109,91 @@ public class DominioServiceImpl implements DominioService {
             return Arrays.asList("http://localhost:4200");
         }
         return parsed;
+    }
+
+    // =========================================================
+    // Escritura / sincronización de dominios (POST /save-domain)
+    // =========================================================
+    private void guardarDominioEnLaravel(Dominio dominio) {
+        String endpoint = apiUrl + "/save-domain";
+
+        Map<String, Object> payload = parseJsonToAllowedDomains(dominio);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+
+        // TODO: Quitar debug
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            System.out.println(mapper.writeValueAsString(payload));
+        } catch (Exception e) {
+            System.out.println("Error al convertir el objeto a JSON: " + e.getMessage());
+        }
+
+        try {
+            restTemplate.postForEntity(endpoint, request, String.class);
+            log.info("Dominio sincronizado correctamente en Laravel: {}", dominio.getDominio());
+        } catch (RestClientException e) {
+            log.error("Error sincronizando dominio con Laravel: {}", dominio.getDominio(), e);
+
+            throw new DominioSyncException(
+                    "No se pudo sincronizar el dominio con la API, contacte. con soporte si sigue ocurriendo el error",
+                    dominio.getDominio());
+        }
+    }
+
+    @Override
+    public void saveAll(List<DominioDTO> dominioDTOs, Negocio negocio) {
+        if (dominioDTOs == null)
+            return;
+
+        for (DominioDTO dto : dominioDTOs) {
+            Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
+
+            Dominio dominioExistente = dominioRepository.findByDominio(dto.getDominio());
+
+            if (dominioExistente != null) {
+                dominioRepository.delete(dominioExistente);
+            }
+            // Guardar primero en laravel
+            guardarDominioEnLaravel(dominio);
+            // Guardar en BD
+            dominioRepository.save(dominio);
+        }
+    }
+
+    @Override
+    public void updateAll(List<DominioDTO> nuevosDTO, Negocio negocio) {
+        List<Dominio> actuales = negocio.getListaDominios();
+
+        // Identificar NUEVOS DOMINIOS (que antes no estaban)
+        List<DominioDTO> nuevos = nuevosDTO.stream()
+                .filter(dto -> actuales.stream().noneMatch(d -> d.getDominio().equals(dto.getDominio())))
+                .toList();
+
+        // Identificar BORRADOS (que ya no están)
+        List<Dominio> borrados = actuales.stream()
+                .filter(d -> nuevosDTO.stream().noneMatch(dto -> dto.getDominio().equals(d.getDominio())))
+                .toList();
+
+        // 1) Borrar de BD 
+        dominioRepository.deleteAll(borrados);
+
+        // 2) Insertar nuevos (y enviarlos a Laravel)
+        for (DominioDTO dto : nuevos) {
+            Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
+            guardarDominioEnLaravel(dominio);
+            dominioRepository.save(dominio);
+        }
+    }
+
+    private Map<String, Object> parseJsonToAllowedDomains(Dominio dominio) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("dominio", dominio.getDominio());
+        payload.put("descripcion", dominio.getDescripcion());
+        payload.put("activo", dominio.isActivo());
+
+        return payload;
     }
 }
