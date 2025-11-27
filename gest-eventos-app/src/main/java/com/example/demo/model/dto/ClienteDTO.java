@@ -50,8 +50,7 @@ public class ClienteDTO implements Serializable {
 		cliDTO.setNombre(cliente.getNombre());
 		cliDTO.setEmail(cliente.getEmail());
 		cliDTO.setTelf(cliente.getTelf());
-		cliDTO.setPass(cliente.getPass());
-		cliDTO.setPass(cliente.getPass());
+		// El pass no lo enseñamos
 		cliDTO.setRol(cliente.getRol());
 
 		return cliDTO;

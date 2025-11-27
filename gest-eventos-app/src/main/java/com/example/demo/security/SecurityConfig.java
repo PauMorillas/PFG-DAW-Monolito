@@ -1,6 +1,5 @@
 package com.example.demo.security;
 
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +8,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -73,37 +73,31 @@ public class SecurityConfig {
 
 	// 3. Define la cadena de filtros de seguridad (Autorización)
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(HttpSecurity http, ApiTokenFilter apiTokenFilter) throws Exception {
 		http
-				.cors()
+		.addFilterBefore(apiTokenFilter, UsernamePasswordAuthenticationFilter.class)		
+		.cors()
 				.and()
-				.headers(headers -> headers
+				/* .headers(headers -> headers
 						.frameOptions(frameOptions -> frameOptions.disable()) // No bloquear iframes
-				)
-				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(
-								"/api/clientes/**",
-								"/api/gerentes/**",
-								"/api/servicios/**",
-								"/api/reservas/**",
-								"/public/**",
-								"/register",
-								"/public/api/calendario/**",
-								"/public/reservas/confirmar/",
-								"/mail/**",
-								"/css/**",
-								"/js/**",
-								"/login",
-								"/error",
-								"/favicon.ico",
-								"/api/negocios/**")
-						.permitAll()
+				) */
+				.authorizeHttpRequests(auth -> auth
+						// RUTAS PÚBLICAS
+						.requestMatchers("/public/**", "/login", "/register", "/css/**", "/js/**").permitAll()
+
+						// API PRIVADA → REQUIERE AUTENTICACIÓN (Bearer)
+						.requestMatchers("/api/**").authenticated()
+
+						// Thymeleaf privadas
 						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
-						.anyRequest().authenticated())
+
+						.anyRequest().permitAll())
+
 				.formLogin().disable() // Desactiva la autenticación de spring
 				.logout().disable() // Desactiva el logout automatico de spring
 				.csrf(csrf -> csrf
-						.ignoringRequestMatchers("/api/gerentes/**", "/api/clientes/**", "/mail/**", "/public/**", "/api/negocios/**", "/api/servicios/**", "/api/reservas/**"));
+						.ignoringRequestMatchers("/public/**", "/api/**") // porque aquí hay POST externos
+				);
 
 		// NOTA: No se define CSP aquí; ahora se hace dinámicamente en CspFilter
 		return http.build();
