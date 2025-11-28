@@ -10,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -134,11 +136,23 @@ public class DominioServiceImpl implements DominioService {
         try {
             restTemplate.postForEntity(endpoint, request, String.class);
             log.info("Dominio sincronizado correctamente en Laravel: {}", dominio.getDominio());
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+                // Mensaje propio en español
+                throw new DominioSyncException(
+                        "El dominio '" + dominio.getDominio() + "' ya está registrado",
+                        dominio.getDominio());
+            } else {
+                e.printStackTrace();
+                throw new DominioSyncException(
+                        "No se pudo sincronizar el dominio con la API, contacte con soporte si sigue ocurriendo el error",
+                        dominio.getDominio());
+            }
         } catch (RestClientException e) {
-            log.error("Error sincronizando dominio con Laravel: {}", dominio.getDominio(), e);
-
+            e.printStackTrace();
+            // Error de conexión, timeout, etc
             throw new DominioSyncException(
-                    "No se pudo sincronizar el dominio con la API, contacte. con soporte si sigue ocurriendo el error",
+                    "No se pudo sincronizar el dominio con la API, contacte con soporte si sigue ocurriendo el error",
                     dominio.getDominio());
         }
     }
@@ -177,7 +191,7 @@ public class DominioServiceImpl implements DominioService {
                 .filter(d -> nuevosDTO.stream().noneMatch(dto -> dto.getDominio().equals(d.getDominio())))
                 .toList();
 
-        // 1) Borrar de BD 
+        // 1) Borrar de BD
         dominioRepository.deleteAll(borrados);
 
         // 2) Insertar nuevos (y enviarlos a Laravel)

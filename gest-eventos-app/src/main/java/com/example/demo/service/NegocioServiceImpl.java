@@ -6,20 +6,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.exception.EmailAlreadyInUseException;
 import com.example.demo.model.dto.DominioDTO;
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.model.dto.ServicioDTO;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.dao.NegocioRepository;
-import com.example.demo.repository.entity.Dominio;
 import com.example.demo.repository.entity.Gerente;
 import com.example.demo.repository.entity.Negocio;
-import com.example.demo.repository.entity.Servicio;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class NegocioServiceImpl implements NegocioService {
@@ -64,36 +65,64 @@ public class NegocioServiceImpl implements NegocioService {
     }
 
     @Override
+    @Transactional
     public void save(NegocioDTO negocioDTO) {
         // 1. Obtener gerente
         Gerente gerente = gerenteRepository.findByEmail(negocioDTO.getCorreoGerente())
                 .orElseThrow(() -> new RuntimeException("Gerente no encontrado"));
 
-        // 2. Convertir el NegocioDTO en entidad SIN LISTA DE SERVICIOS NI DOMINIOS TODAVÍA
-        Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, null, null);
+        try {
+            // 2. Convertir el NegocioDTO en entidad SIN LISTA DE SERVICIOS NI DOMINIOS
+            // TODAVÍA
+            Negocio negocio = NegocioDTO.convertToEntity(negocioDTO, gerente, null, null);
 
-        // 3. Guardar primero el negocio (para generar el ID)
-        negocio = negocioRepository.save(negocio);
+            if (negocioRepository.existsByCorreoElec(negocioDTO.getCorreoElec())) {
+                throw new EmailAlreadyInUseException("El correo ya está registrado.");
+            }
 
-        // 4. Guardar los dominios y asignarles el negocio
-        dominioService.saveAll(negocioDTO.getListaDominiosDTO(), negocio);
+            // 4. Guardar el negocio (para generar el ID)
+            negocio = negocioRepository.save(negocio);
+
+            // 5. Guardar los dominios y asignarles el negocio
+            dominioService.saveAll(negocioDTO.getListaDominiosDTO(), negocio);
+
+        } catch (DataIntegrityViolationException e) {
+
+            // Esta excepción llega cuando MySQL lanza "Duplicate entry..."
+            if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+                throw new EmailAlreadyInUseException("El correo ya está en uso por otro negocio");
+            }
+
+            throw e; // otras violaciones de integridad
+        }
     }
 
     @Override
+    @Transactional
     public void update(NegocioDTO negocioDTO) {
         Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
         negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+        try {
+            Negocio negocioExistente = negocioOpt.get();
 
-        Negocio negocioExistente = negocioOpt.get();
+            Negocio negocioActualizado = NegocioDTO.convertToEntity(
+                    negocioDTO,
+                    negocioExistente.getGerente(),
+                    negocioExistente.getListaServicios(),
+                    negocioExistente.getListaDominios());
 
-        Negocio negocioActualizado = NegocioDTO.convertToEntity(
-                negocioDTO,
-                negocioExistente.getGerente(),
-                negocioExistente.getListaServicios(),
-                negocioExistente.getListaDominios());
+            // PRIMERO Actualizamos los dominios usando DominioService, si hay errores se
+            // parará el flujo, de lo contrario guardará en la BD y fallará silenciosamente
+            dominioService.updateAll(negocioDTO.getListaDominiosDTO(), negocioActualizado);
+            negocioRepository.save(negocioActualizado);
+        } catch (DataIntegrityViolationException e) {
 
-        negocioRepository.save(negocioActualizado);
-        // Actualizamos los dominios usando DominioService
-        dominioService.updateAll(negocioDTO.getListaDominiosDTO(), negocioActualizado);
+            // Esta excepción llega cuando MySQL lanza "Duplicate entry..."
+            if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+                throw new EmailAlreadyInUseException("El correo ya está en uso por otro negocio");
+            }
+
+            throw e; // otras violaciones de integridad
+        }
     }
 }
