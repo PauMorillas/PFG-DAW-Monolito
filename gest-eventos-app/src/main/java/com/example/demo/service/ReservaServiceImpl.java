@@ -48,7 +48,8 @@ public class ReservaServiceImpl implements ReservaService {
 	private MailService mailService;
 
 	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
-			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
 	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
 
 	// =======================================================
@@ -65,13 +66,10 @@ public class ReservaServiceImpl implements ReservaService {
 		// Usamos LocalDateTime.parse() con el formatter exacto para aceptar
 		// "2025-11-25T12:30:00.000" y evitar errores al parsear.
 		try {
-			// Convierte "2025-11-27T10:00:00.000Z" → OffsetDateTime
-			OffsetDateTime odtStart = OffsetDateTime.parse(reservaRequestDTO.getFechaInicio());
-			OffsetDateTime odtEnd = OffsetDateTime.parse(reservaRequestDTO.getFechaFin());
 
 			// Lo convertimos a LocalDateTime porque tu implementación INTERNA lo requiere
-			LocalDateTime start = odtStart.toLocalDateTime();
-			LocalDateTime end = odtEnd.toLocalDateTime();
+			LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
+			LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
 
 			// 2. Validación de disponibilidad
 			// Lanza una excepción si el slot ya está ocupado.
@@ -87,6 +85,7 @@ public class ReservaServiceImpl implements ReservaService {
 		} catch (DateTimeParseException e) {
 			// Captura específicamente el error de parsing y lo relanza como un error del
 			// cliente (400)
+			e.printStackTrace();
 			throw new ResponseStatusException(
 					HttpStatus.BAD_REQUEST,
 					"Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage());
