@@ -259,7 +259,7 @@ public class ReservaServiceImpl implements ReservaService {
 
 	private String buildConfirmationLink(String token) {
 		// TODO: **IMPORTANTE:** Reemplaza baseUrl con la URL real de producción
-		String baseUrl = "http://localhost:8081";
+		String baseUrl = "https://embedbookapp.com";
 		return baseUrl + "/public/reservas/confirmar?token=" + token;
 	}
 

@@ -28,15 +28,22 @@ class AllowedDomainSeeder extends Seeder
         DB::table('allowed_domains')->insert([
             // FRONTEND Angular local
             [
-                'dominio' => 'http://localhost:4200',
+                'dominio' => 'https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/*',
                 'activo' => 1,
-                'descripcion' => 'Frontend Angular local (registro-cliente).',
+                'descripcion' => 'Frontend Angular público.',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'dominio' => 'https://paumorillas.github.io',
+                'activo' => 1,
+                'descripcion' => 'Frontend Angular público.',
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             // SPRING BOOT frontend público
             [
-                'dominio' => 'http://localhost:8081',
+                'dominio' => 'https://embedbookapp.com',
                 'activo' => 1,
                 'descripcion' => 'Frontend público de Spring Boot (iframe host).',
                 'created_at' => $now,
@@ -60,7 +67,7 @@ class AllowedDomainSeeder extends Seeder
             ],
             // CDN para scripts y estilos
             [
-                'dominio' => 'https://cdn.jsdelivr.net',
+                'dominio' => 'https://cdn.jsdelivr.net/',
                 'activo' => 1,
                 'descripcion' => 'CDN público para scripts y estilos.',
                 'created_at' => $now,

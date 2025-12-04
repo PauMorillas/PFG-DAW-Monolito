@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # --- PASO 1: Compilar la aplicación Spring Boot ---
-
 echo "--- 📦 Limpiando y compilando la aplicación Java (Maven) ---"
 
 cd ./gest-eventos-app || { echo "❌ No se encontró la carpeta gest-eventos-app"; exit 1; }
@@ -15,13 +14,11 @@ fi
 echo "✅ Compilación exitosa. JAR listo."
 
 # --- PASO 2: Limpieza completa de Podman ---
-
 echo "--- 🧹 Deteniendo y eliminando contenedores, redes y volumen de la BD ---"
 
 cd ..
 
 # Usa podman-compose o podman compose directamente
-# Si tienes podman >= 4.3, puedes usar 'podman compose'
 podman compose down -v --remove-orphans || echo "⚠️ No había contenedores corriendo o error al detenerlos."
 
 echo "✅ Limpieza de Podman completa."
@@ -37,4 +34,4 @@ echo ""
 echo "💡 VERIFICACIÓN:"
 echo "El contenedor 'pfg_daw_mysql_db' tardará unos segundos en estar HEALTHY."
 echo "Puedes comprobar el estado con: podman ps"
-echo "Una vez listo, accede a: http://localhost:8081/ (o el puerto que uses)"
+echo "Una vez listo, accede a: https://embedbookapp.com"
