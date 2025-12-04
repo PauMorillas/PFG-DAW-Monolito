@@ -6,8 +6,8 @@
   // =======================================================
 
   const config = {
-    serviceId: document.currentScript.getAttribute("data-service-id") || "1",
-    baseUrl: "http://localhost:8081", // TODO: Cambiar a URL de Producción
+    serviceId: document.currentScript.getAttribute("data-service-id") || "2",
+    baseUrl: "https://embedbookapp.com", // TODO: Cambiar a URL de Producción
     modalId: "embedbook-modal",
     buttonId: "embedbook-floating-btn",
     iframeHeightOffset: 25, // Espacio para el botón de cerrar en px
@@ -28,11 +28,12 @@
    * @returns {string} URL completa para Angular
    */
   function buildAngularUrl(preReserva) {
-    const base = "http://localhost:4200/registro-cliente"; // TODO: Cambiar a producción
+    const base = "https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/registro-cliente"; // TODO: Cambiar a producción
     const params = new URLSearchParams({
       parentOrigin: window.location.origin,
       preReservaData: encodeURIComponent(JSON.stringify(preReserva)),
     });
+    console.log(`${base}?${params.toString()}`);
     return `${base}?${params.toString()}`;
   }
 

@@ -96,19 +96,19 @@ public class DominioServiceImpl implements DominioService {
 
     /**
      * Parsea una cadena de dominios separados por espacios en una lista.
-     * Si la cadena es null o vacía devuelve un fallback a http://localhost:4200.
+     * Si la cadena es null o vacía devuelve un fallback a https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/.
      */
     private List<String> parseDomains(String domainsPlain) {
         System.out.println("domainsPlain: " + domainsPlain);
         if (domainsPlain == null || domainsPlain.trim().isEmpty()) {
-            return Arrays.asList("http://localhost:4200");
+            return Arrays.asList("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/");
         }
         List<String> parsed = Arrays.stream(domainsPlain.split("\\s+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
         if (parsed.isEmpty()) {
-            return Arrays.asList("http://localhost:4200");
+            return Arrays.asList("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/");
         }
         return parsed;
     }

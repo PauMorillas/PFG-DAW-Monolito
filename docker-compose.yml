@@ -25,6 +25,16 @@ services:
       - ./db_init:/docker-entrypoint-initdb.d
       # Configuración de MySQL
       - ./db_init/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pfg_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    env_file:
+      - ./.env
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
 
   # ---------------------------------------------------------------------------------------- 
   # API de Dominios Permitidos (Frontend/API)
@@ -69,6 +79,6 @@ services:
         - API_ANGULAR_URL=${API_ANGULAR_URL}
         - API_SECRET=${API_SECRET}
         - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080"
-
+  
 volumes:
   db_data: # Solo se nombra el volumen que necesita ser persistente

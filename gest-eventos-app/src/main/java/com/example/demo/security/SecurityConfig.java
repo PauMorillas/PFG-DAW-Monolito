@@ -99,14 +99,15 @@ public class SecurityConfig {
 				 */
 				.authorizeHttpRequests(auth -> auth
 						// RUTAS PÚBLICAS
-						.requestMatchers("/public/**", "/login", "/register", "/css/**", "/js/**").permitAll()
+						.requestMatchers("/", "/public/**", "/login", "/register", "/css/**", "/js/**").permitAll()
 
 						// API PRIVADA → REQUIERE AUTENTICACIÓN (Bearer)
 						.requestMatchers("/api/**").authenticated()
 
 						// Thymeleaf privadas
-						.requestMatchers("/", "/home", "/dashboard/**").hasRole("GESTOR")
+						.requestMatchers("/home", "/dashboard/**").hasRole("GESTOR")
 
+						// Todas las demás --> rutas públicas --> Acaban en el controlador SpaFallbackController
 						.anyRequest().permitAll())
 
 				.formLogin().disable() // Desactiva la autenticación de spring

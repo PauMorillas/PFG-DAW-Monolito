@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -48,6 +49,7 @@ public class ReservaServiceImpl implements ReservaService {
 
 	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
 	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
 
 	// =======================================================
@@ -64,7 +66,8 @@ public class ReservaServiceImpl implements ReservaService {
 		// Usamos LocalDateTime.parse() con el formatter exacto para aceptar
 		// "2025-11-25T12:30:00.000" y evitar errores al parsear.
 		try {
-			// Convierte el String a LocalDateTime
+
+			// Lo convertimos a LocalDateTime porque tu implementación INTERNA lo requiere
 			LocalDateTime start = LocalDateTime.parse(reservaRequestDTO.getFechaInicio(), LOCAL_DATE_TIME_MS_FORMATTER);
 			LocalDateTime end = LocalDateTime.parse(reservaRequestDTO.getFechaFin(), LOCAL_DATE_TIME_MS_FORMATTER);
 
@@ -82,6 +85,7 @@ public class ReservaServiceImpl implements ReservaService {
 		} catch (DateTimeParseException e) {
 			// Captura específicamente el error de parsing y lo relanza como un error del
 			// cliente (400)
+			e.printStackTrace();
 			throw new ResponseStatusException(
 					HttpStatus.BAD_REQUEST,
 					"Error de formato de fecha. La fecha enviada no es válida: " + e.getMessage());
@@ -113,7 +117,6 @@ public class ReservaServiceImpl implements ReservaService {
 		// 2. Contar solapamientos de Pre-Reservas (vigentes)
 		long preReservasSolapadas = preReservaRepository.countOverlappingPreReserva(idServicio, start, end,
 				LocalDateTime.now());
-
 		if (preReservasSolapadas > 0) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT,
 					"El turno está temporalmente reservado. Inténtalo de nuevo en unos minutos.");
@@ -232,7 +235,7 @@ public class ReservaServiceImpl implements ReservaService {
 		if (estado == Estado.CANCELADA) {
 			enviarMailCancelacion(reserva, clienteDTO, servicioDTO);
 		}
-		
+
 		return ReservaDTO.convertToDTO(reserva, clienteDTO, servicioDTO);
 	}
 
@@ -256,7 +259,7 @@ public class ReservaServiceImpl implements ReservaService {
 
 	private String buildConfirmationLink(String token) {
 		// TODO: **IMPORTANTE:** Reemplaza baseUrl con la URL real de producción
-		String baseUrl = "http://localhost:8081";
+		String baseUrl = "https://embedbookapp.com";
 		return baseUrl + "/public/reservas/confirmar?token=" + token;
 	}
 
