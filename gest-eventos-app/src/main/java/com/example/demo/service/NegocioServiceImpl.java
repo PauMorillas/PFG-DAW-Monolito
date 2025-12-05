@@ -14,6 +14,7 @@ import com.example.demo.model.dto.DominioDTO;
 import com.example.demo.model.dto.GerenteDTO;
 import com.example.demo.model.dto.NegocioDTO;
 import com.example.demo.model.dto.ServicioDTO;
+import com.example.demo.repository.dao.CustomDominioRepository;
 import com.example.demo.repository.dao.GerenteRepository;
 import com.example.demo.repository.dao.NegocioRepository;
 import com.example.demo.repository.entity.Gerente;
@@ -33,6 +34,9 @@ public class NegocioServiceImpl implements NegocioService {
 
     @Autowired
     private DominioService dominioService;
+
+    @Autowired
+    private CustomDominioRepository dominioRepository;
 
     @Override
     public NegocioDTO findById(Long id) {
@@ -102,6 +106,7 @@ public class NegocioServiceImpl implements NegocioService {
     public void update(NegocioDTO negocioDTO) {
         Optional<Negocio> negocioOpt = negocioRepository.findById(negocioDTO.getId());
         negocioOpt.orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+
         try {
             Negocio negocioExistente = negocioOpt.get();
 
@@ -111,18 +116,27 @@ public class NegocioServiceImpl implements NegocioService {
                     negocioExistente.getListaServicios(),
                     negocioExistente.getListaDominios());
 
-            // PRIMERO Actualizamos los dominios usando DominioService, si hay errores se
-            // parará el flujo, de lo contrario guardará en la BD y fallará silenciosamente
+            // PRIMERO actualizar dominios
             dominioService.updateAll(negocioDTO.getListaDominiosDTO(), negocioActualizado);
+
+            // Refrescar la lista de dominios del negocio actualizado
+            negocioActualizado.setListaDominios(
+                    dominioRepository.findByNegocioId(negocioActualizado.getId()));
+
+            // AHORA sí guardar el negocio
             negocioRepository.save(negocioActualizado);
+
         } catch (DataIntegrityViolationException e) {
 
-            // Esta excepción llega cuando MySQL lanza "Duplicate entry..."
-            if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+            Throwable cause = e.getCause();
+            if (cause instanceof org.hibernate.exception.ConstraintViolationException &&
+                    cause.getMessage() != null &&
+                    cause.getMessage().contains("Duplicate entry")) {
+
                 throw new EmailAlreadyInUseException("El correo ya está en uso por otro negocio");
             }
 
-            throw e; // otras violaciones de integridad
+            throw e;
         }
     }
 }

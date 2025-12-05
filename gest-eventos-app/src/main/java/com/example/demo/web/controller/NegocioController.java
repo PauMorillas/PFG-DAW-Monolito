@@ -3,6 +3,7 @@ package com.example.demo.web.controller;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -80,12 +81,17 @@ public class NegocioController {
             negocioService.update(negocioDTO);
             return ResponseEntity.ok().build();
         } catch (DominioSyncException e) {
-            // Solo loggear mensaje, no stacktrace
             log.warn("Error sincronizando dominio: {}", e.getDominio());
             return ResponseEntity.status(422).body(Map.of(
                     "error", "DOMINIO_DUPLICADO",
                     "message", e.getMessage(),
                     "dominio", e.getDominio()));
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Correo duplicado en update: {}", negocioDTO.getCorreoElec());
+            return ResponseEntity.status(409).body(Map.of(
+                    "error", "EMAIL_DUPLICADO",
+                    "message", "El correo ya está en uso",
+                    "correo", negocioDTO.getCorreoElec()));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).build();
