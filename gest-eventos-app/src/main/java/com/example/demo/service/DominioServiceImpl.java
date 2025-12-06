@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -34,8 +37,11 @@ import lombok.extern.slf4j.Slf4j;
  * transformamos en una List<String> limpiando espacios en blanco.
  */
 @Service
+@EnableCaching
 @Slf4j
 public class DominioServiceImpl implements DominioService {
+
+    private static final String CACHE_NAME = "allowedDomains";
 
     public DominioServiceImpl(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -57,6 +63,7 @@ public class DominioServiceImpl implements DominioService {
      * separados por espacios. Convierte ese String en una lista y aplica un
      * fallback en caso de error o respuesta vacía.
      */
+    @Cacheable(value = CACHE_NAME)
     @Override
     public List<String> findAll() {
         String endpoint = apiUrl + "/allowed-domains";
@@ -65,17 +72,8 @@ public class DominioServiceImpl implements DominioService {
             // Pedimos el body como String (text/plain)
             String body = restTemplate.getForObject(endpoint, String.class);
 
-            if (body == null || body.trim().isEmpty()) {
-                log.warn("La respuesta llegó vacía - usando fallback a los dominios por defecto", endpoint);
-                return parseDomains(defaultDomains);
-            }
-
-            // Split por cualquier whitespace (espacios, tabs, nuevas líneas), trim y
-            // filtrar vacíos
-            List<String> allowedDomains = Arrays.stream(body.split("\\s+"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
+            // Usamos parseDomains para manejar null, vacío y limpieza de espacios
+            List<String> allowedDomains = parseDomains(body);
 
             if (allowedDomains.isEmpty()) {
                 log.warn(
@@ -87,8 +85,6 @@ public class DominioServiceImpl implements DominioService {
             return allowedDomains;
 
         } catch (RestClientException e) {
-            // Manejo sencillo: log y fallback a las URLs por defecto definidas en
-            // application.properties
             log.error("Error al obtener los dominios permitidos desde {}: ", endpoint, e);
             return parseDomains(defaultDomains);
         }
@@ -96,10 +92,12 @@ public class DominioServiceImpl implements DominioService {
 
     /**
      * Parsea una cadena de dominios separados por espacios en una lista.
-     * Si la cadena es null o vacía devuelve un fallback a https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/.
+     * Si la cadena es null o vacía devuelve un fallback a
+     * https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/.
      */
     private List<String> parseDomains(String domainsPlain) {
         System.out.println("domainsPlain: " + domainsPlain);
+        log.info("Dominios planos en parseDomains", domainsPlain);
         if (domainsPlain == null || domainsPlain.trim().isEmpty()) {
             return Arrays.asList("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/");
         }
@@ -117,6 +115,7 @@ public class DominioServiceImpl implements DominioService {
     // Escritura / sincronización de dominios (POST /save-domain)
     // =========================================================
     private void guardarDominioEnLaravel(Dominio dominio) {
+        invalidateCache();
         String endpoint = apiUrl + "/save-domain";
 
         Map<String, Object> payload = parseJsonToAllowedDomains(dominio);
@@ -162,6 +161,8 @@ public class DominioServiceImpl implements DominioService {
         if (dominioDTOs == null)
             return;
 
+        invalidateCache();
+
         for (DominioDTO dto : dominioDTOs) {
             Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
 
@@ -179,6 +180,7 @@ public class DominioServiceImpl implements DominioService {
 
     @Override
     public void updateAll(List<DominioDTO> nuevosDTO, Negocio negocio) {
+
         List<Dominio> actuales = negocio.getListaDominios();
 
         // Identificar NUEVOS DOMINIOS (que antes no estaban)
@@ -192,14 +194,30 @@ public class DominioServiceImpl implements DominioService {
                 .toList();
 
         // 1) Borrar de BD
-        dominioRepository.deleteAll(borrados);
+        // TODO: Borrar también en Laravel (falta endpoint)
+        if (!borrados.isEmpty()) {
+            dominioRepository.deleteAll(borrados);
+            // También quitarlos de la colección en memoria
+            negocio.getListaDominios().removeAll(borrados);
+        }
 
         // 2) Insertar nuevos (y enviarlos a Laravel)
         for (DominioDTO dto : nuevos) {
             Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
             guardarDominioEnLaravel(dominio);
             dominioRepository.save(dominio);
+
+            // Añadir a la colección del negocio
+            negocio.getListaDominios().add(dominio);
         }
+    }
+
+    // ======= HELPERS =======
+
+    // Para limpiar el cache cuando se actualice algo
+    @CacheEvict(value = CACHE_NAME, allEntries = true)
+    private void invalidateCache() {
+        log.info("Cache de dominios permitidos invalidado");
     }
 
     private Map<String, Object> parseJsonToAllowedDomains(Dominio dominio) {

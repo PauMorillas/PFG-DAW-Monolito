@@ -46,8 +46,7 @@ public class SecurityConfig {
 			restTemplate.getInterceptors().add((request, body, execution) -> {
 				request.getHeaders().set("Authorization", "Bearer " + apiToken);
 				request.getHeaders().set("Accept", "text/plain");
-				System.out.println(this.urlAngular);
-				log.info(this.urlAngular);
+				
 				return execution.execute(request, body);
 			});
 			return restTemplate;
@@ -71,11 +70,13 @@ public class SecurityConfig {
 
 		// Convertimos la cadena separada por comas en lista
 		List<String> allowedOrigins = Arrays.stream(urlAngular.split(","))
-				.map(String::trim)
+				.map(String::trim) // quita espacios
+				.filter(s -> !s.isEmpty()) // quita strings vacíos
 				.toList();
+		System.out.println("Allowed Origins CORS: " + allowedOrigins);
 		configuration.setAllowedOrigins(allowedOrigins);
 
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 
@@ -107,7 +108,7 @@ public class SecurityConfig {
 						// Thymeleaf privadas
 						.requestMatchers("/home", "/dashboard/**").hasRole("GESTOR")
 
-						// Todas las demás --> rutas públicas --> Acaban en el controlador SpaFallbackController
+						// Todas las demás --> rutas públicas
 						.anyRequest().permitAll())
 
 				.formLogin().disable() // Desactiva la autenticación de spring
