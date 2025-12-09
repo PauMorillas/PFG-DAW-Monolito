@@ -83,6 +83,12 @@ INSERT INTO servicio (titulo, descripcion, ubicacion, duracion_min, coste, id_ne
 ('Revisión Pre-ITV', 'Chequeo completo de seguridad.', 'Box 2', 120, 120.00, 2);
 SET @ID_SERVICIO_ITV = LAST_INSERT_ID();
 
+INSERT INTO `servicio` (`titulo`, `descripcion`, `ubicacion`, `coste`, `fecha_creacion`, `duracion_min`, `id_negocio`)
+VALUES
+  ('Cambio de Neumáticos', 'Sustitución de neumáticos y equilibrado.', 'Box 3', '80.00', NOW(), '45', 2),
+  ('Diagnóstico Electrónico', 'Lectura de centralita y detección de fallos.', 'Box 4', '50.00', NOW(), '30', 2);
+
+
 -- ====================================================================
 -- 4. INSERTAR CLIENTES
 -- ====================================================================

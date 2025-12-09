@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -9,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -31,8 +31,10 @@ import com.example.demo.repository.entity.Reserva;
 import com.example.demo.repository.entity.Servicio;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class ReservaServiceImpl implements ReservaService {
 	@Autowired
 	private ReservaRepository reservaRepository;
@@ -47,10 +49,19 @@ public class ReservaServiceImpl implements ReservaService {
 	@Autowired
 	private MailService mailService;
 
-	public static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
+	private final MyCacheManager cacheManager; // Para llamadas internas con proxies AOP
+
+	private static final DateTimeFormatter LOCAL_DATE_TIME_MS_FORMATTER = DateTimeFormatter
 			.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
 	private static final long EXPIRATION_MINUTES = 30; // Token será válido por 30 minutos
+
+	private static final String RESERVAS_CACHE = "reservasPorServicio";
+
+    // CONSTRUCTOR PARA INYECCIÓN DE DEPENDENCIAS
+	public ReservaServiceImpl(MyCacheManager cacheManager) {
+		this.cacheManager = cacheManager; // Se inyecta el proxy aquí
+	}
 
 	// =======================================================
 	// I. CREACIÓN DE PRE-RESERVA (CONCURRENCIA CONTROLADA)
@@ -124,6 +135,7 @@ public class ReservaServiceImpl implements ReservaService {
 	}
 
 	@Transactional
+	@Override
 	public Reserva confirmarReserva(String token) throws EntityNotFoundException {
 
 		// 1. VERIFICACIÓN Y DATOS de la pre-Reserva
@@ -169,11 +181,15 @@ public class ReservaServiceImpl implements ReservaService {
 		Reserva reservaConfirmada = reservaRepository.save(reserva);
 		preReservaRepository.delete(preReserva); // Eliminamos la solicitud temporal
 
+		// 6. Para invalidar el caché del servicio recién modificado
+		this.cacheManager.invalidateReservasCache(servicio.getId());
+
 		return reservaConfirmada;
 	}
 
 	// Devuelve las reservas de un determinado servicio
 	@Override
+	@Cacheable(value = RESERVAS_CACHE, key = "#idServicio")
 	public List<EventoCalendarioDTO> getAllReservasByServicioId(Long idServicio) {
 		// 1. Obtener el ID del Negocio asociado al servicio
 		Long idNegocio = servicioRepository.findIdNegocioByServicioId(idServicio)

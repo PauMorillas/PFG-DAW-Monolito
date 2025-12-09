@@ -74,10 +74,8 @@ public class PublicController {
 
 	@GetMapping("/reservas/confirmar")
 	public ModelAndView confirmarReserva(@RequestParam String token) {
-		log.info("Intento de confirmación de reserva con token: ", token);
-
 		ModelAndView modelAndView = new ModelAndView("public/booking-confirmation");
-
+		
 		try {
 			// Llama al servicio para ejecutar la lógica de Upsert, crear Reserva y limpiar
 			// PreReserva

@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.http.HttpEntity;
@@ -40,12 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @EnableCaching
 @Slf4j
 public class DominioServiceImpl implements DominioService {
-
     private static final String CACHE_NAME = "allowedDomains";
-
-    public DominioServiceImpl(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     @Value("${api.domain.url}")
     private String apiUrl;
@@ -54,9 +48,15 @@ public class DominioServiceImpl implements DominioService {
     private String defaultDomains;
 
     private final RestTemplate restTemplate;
+    private final MyCacheManager cacheManager;
 
     @Autowired
     private CustomDominioRepository dominioRepository;
+
+    public DominioServiceImpl(RestTemplate restTemplate, MyCacheManager cacheManager) {
+        this.restTemplate = restTemplate;
+        this.cacheManager = cacheManager;
+    }
 
     /**
      * Llama al endpoint /allowed-domains que devuelve un texto plano con dominios
@@ -115,7 +115,7 @@ public class DominioServiceImpl implements DominioService {
     // Escritura / sincronización de dominios (POST /save-domain)
     // =========================================================
     private void guardarDominioEnLaravel(Dominio dominio) {
-        invalidateCache();
+        this.cacheManager.invalidateAllowedDomainsCache();
         String endpoint = apiUrl + "/save-domain";
 
         Map<String, Object> payload = parseJsonToAllowedDomains(dominio);
@@ -160,8 +160,6 @@ public class DominioServiceImpl implements DominioService {
     public void saveAll(List<DominioDTO> dominioDTOs, Negocio negocio) {
         if (dominioDTOs == null)
             return;
-
-        invalidateCache();
 
         for (DominioDTO dto : dominioDTOs) {
             Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
@@ -213,13 +211,6 @@ public class DominioServiceImpl implements DominioService {
     }
 
     // ======= HELPERS =======
-
-    // Para limpiar el cache cuando se actualice algo
-    @CacheEvict(value = CACHE_NAME, allEntries = true)
-    private void invalidateCache() {
-        log.info("Cache de dominios permitidos invalidado");
-    }
-
     private Map<String, Object> parseJsonToAllowedDomains(Dominio dominio) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("dominio", dominio.getDominio());
