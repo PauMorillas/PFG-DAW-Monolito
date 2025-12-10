@@ -29,7 +29,7 @@
    */
   function buildAngularUrl(preReserva) {
     const base =
-      "https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/registro-cliente"; // TODO: Cambiar a producción
+      "https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/#/registro-cliente";
     const params = new URLSearchParams({
       parentOrigin: window.location.origin,
       preReservaData: encodeURIComponent(JSON.stringify(preReserva)),
@@ -219,196 +219,196 @@
   function injectStyles() {
     const style = document.createElement("style");
     style.textContent = `
-/* --- BOTÓN TAB --- */
-#${config.buttonId}.embedbook-tab {
-  position: fixed;
-  top: 90%;
-  right: -6px;
-  transform: translateY(-50%);
-  width: 54px;
-  height: 110px;
-  background: #007bff;
-  border-radius: 12px 0 0 12px;
-  cursor: pointer;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: width .28s cubic-bezier(.22,1,.36,1),
-              height .28s cubic-bezier(.22,1,.36,1);
-  box-shadow: 0 2px 8px rgba(0,0,0,.25);
-  will-change: width, height, transform;
-}
+      /* --- BOTÓN TAB --- */
+      #${config.buttonId}.embedbook-tab {
+        position: fixed;
+        top: 90%;
+        right: -6px;
+        transform: translateY(-50%);
+        width: 54px;
+        height: 110px;
+        background: #007bff;
+        border-radius: 12px 0 0 12px;
+        cursor: pointer;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: width .28s cubic-bezier(.22,1,.36,1),
+                    height .28s cubic-bezier(.22,1,.36,1);
+        box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        will-change: width, height, transform;
+      }
 
-/* Contenido interno */
-#${config.buttonId} .eb-tab-inner {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  transform: rotate(-90deg);
-  transform-origin: center;
-  pointer-events: none;
-}
+      /* Contenido interno */
+      #${config.buttonId} .eb-tab-inner {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        transform: rotate(-90deg);
+        transform-origin: center;
+        pointer-events: none;
+      }
 
-/* Flecha */
-#${config.buttonId} .eb-arrow {
-  display: inline-block;
-  font-size: 18px;
-  transition: transform .25s ease;
-  line-height: 1;
-}
+      /* Flecha */
+      #${config.buttonId} .eb-arrow {
+        display: inline-block;
+        font-size: 18px;
+        transition: transform .25s ease;
+        line-height: 1;
+      }
 
-/* Estado expandido */
-#${config.buttonId}.expanded {
-  width: 230px;
-  height: 56px;
-}
-#${config.buttonId}.expanded .eb-tab-inner {
-  transform: rotate(0deg);
-  pointer-events: auto;
-}
-#${config.buttonId}.expanded .eb-arrow {
-  transform: rotate(90deg);
-}
+      /* Estado expandido */
+      #${config.buttonId}.expanded {
+        width: 230px;
+        height: 56px;
+      }
+      #${config.buttonId}.expanded .eb-tab-inner {
+        transform: rotate(0deg);
+        pointer-events: auto;
+      }
+      #${config.buttonId}.expanded .eb-arrow {
+        transform: rotate(90deg);
+      }
 
-/* --- ANIMACIÓN POKE (CSS) --- */
-@keyframes eb-poke {
-  0%   { transform: translateY(-50%) translateX(0); }
-  40%  { transform: translateY(-50%) translateX(-6px); }
-  70%  { transform: translateY(-50%) translateX(-2px); }
-  100% { transform: translateY(-50%) translateX(0); }
-}
-#${config.buttonId}.poking {
-  animation: eb-poke .55s ease-out;
-}
+      /* --- ANIMACIÓN POKE (CSS) --- */
+      @keyframes eb-poke {
+        0%   { transform: translateY(-50%) translateX(0); }
+        40%  { transform: translateY(-50%) translateX(-6px); }
+        70%  { transform: translateY(-50%) translateX(-2px); }
+        100% { transform: translateY(-50%) translateX(0); }
+      }
+      #${config.buttonId}.poking {
+        animation: eb-poke .55s ease-out;
+      }
 
-/* --- MODAL GENERAL --- */
-#${config.modalId} { 
-  position: fixed;
-  z-index: 1001; 
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.embedbook-hidden { display:none!important; }
+      /* --- MODAL GENERAL --- */
+      #${config.modalId} { 
+        position: fixed;
+        z-index: 1001; 
+        left: 0; top: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .embedbook-hidden { display:none!important; }
 
-/* --- CONTENEDOR DEL MODAL (GRID DE 3 FILAS) --- */
-.embedbook-modal-content {
-  background:#fff;
-  width:90%;
-  max-width:800px;
-  height:90%;
-  max-height:650px;
-  border-radius:8px;
-  position:relative;
-  overflow:hidden;
+      /* --- CONTENEDOR DEL MODAL (GRID DE 3 FILAS) --- */
+      .embedbook-modal-content {
+        background:#fff;
+        width:90%;
+        max-width:800px;
+        height:90%;
+        max-height:650px;
+        border-radius:8px;
+        position:relative;
+        overflow:hidden;
 
-  display: grid;
-  grid-template-rows: 
-    48px   /* HEADER */
-    1fr    /* IFRAMES */
-    40px;  /* NAVBAR */
+        display: grid;
+        grid-template-rows: 
+          48px   /* HEADER */
+          1fr    /* IFRAMES */
+          40px;  /* NAVBAR */
 
-  padding: 0;
-}
+        padding: 0;
+      }
 
-/* === HEADER DONDE VIVE LA X (y nunca se tapa) === */
-.embedbook-header-area {
-  position: relative;
-  width: 100%;
-  height: 48px;
-  padding: 8px 20px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  box-sizing: border-box;
-  background:white;
-  z-index: 20;
-}
+      /* === HEADER DONDE VIVE LA X (y nunca se tapa) === */
+      .embedbook-header-area {
+        position: relative;
+        width: 100%;
+        height: 48px;
+        padding: 8px 20px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        box-sizing: border-box;
+        background:white;
+        z-index: 20;
+      }
 
-/* BOTÓN CERRAR */
-.embedbook-close-btn {
-  width:1.563rem;
-  height:1.563rem;
-  border-radius:50%;
-  border:1px solid rgba(0,0,0,0.08);
-  background:#fff;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 20px;
-  z-index: 30;
-}
+      /* BOTÓN CERRAR */
+      .embedbook-close-btn {
+        width:1.563rem;
+        height:1.563rem;
+        border-radius:50%;
+        border:1px solid rgba(0,0,0,0.08);
+        background:#fff;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size: 20px;
+        z-index: 30;
+      }
 
-/* --- WRAPPER PARA LOS IFRAMES (fila central) --- */
-.embedbook-frame-area {
-  position: relative;
-  padding: 16px; /* 🔥 margen real que SIEMPRE se respeta */
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent;
-}
+      /* --- WRAPPER PARA LOS IFRAMES (fila central) --- */
+      .embedbook-frame-area {
+        position: relative;
+        padding: 16px; /* 🔥 margen real que SIEMPRE se respeta */
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
 
-/* Iframe principal */
-#embedbook-iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: 6px;
-  z-index: 1;
-  background: white;
-}
+      /* Iframe principal */
+      #embedbook-iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 6px;
+        z-index: 1;
+        background: white;
+      }
 
-/* Iframe Angular */
-#embedbook-angular-iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-  border-radius: 6px;
-  z-index: 2;
-  background: white;
-  display: none;
-}
+      /* Iframe Angular */
+      #embedbook-angular-iframe {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 6px;
+        z-index: 2;
+        background: white;
+        display: none;
+      }
 
-/* --- NAVBAR (fila inferior) --- */
-#embedbook-iframe-nav {
-  width: 100%;
-  height: 40px;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  align-items: center;
-  background: #f8f8f8;
-  border-top: 1px solid #ddd;
-  box-sizing: border-box;
-  padding: 6px;
-}
+      /* --- NAVBAR (fila inferior) --- */
+      #embedbook-iframe-nav {
+        width: 100%;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        align-items: center;
+        background: #f8f8f8;
+        border-top: 1px solid #ddd;
+        box-sizing: border-box;
+        padding: 6px;
+      }
 
-#embedbook-iframe-nav button {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-}
+      #embedbook-iframe-nav button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 4px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+      }
 
   `;
     document.head.appendChild(style);
@@ -499,12 +499,12 @@
 
     // Navegación del iframe
     backBtn.addEventListener("click", () => {
-      const iframe = document.getElementById("embedbook-iframe");
+      const iframe = document.getElementById("embedbook-iframe") || document.getElementById("embedbook-angular-iframe");
       if (iframe?.contentWindow) iframe.contentWindow.history.back();
     });
 
     forwardBtn.addEventListener("click", () => {
-      const iframe = document.getElementById("embedbook-iframe");
+      const iframe = document.getElementById("embedbook-iframe") || document.getElementById("embedbook-angular-iframe");
       if (iframe?.contentWindow) iframe.contentWindow.history.forward();
     });
   }

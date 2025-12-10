@@ -186,7 +186,7 @@ function disablePastDays(info) {
  */
 function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
   const PARENT_ORIGIN =
-    window.parent === window ? window.location.origin : "https://embedbookapp.com"; // TODO: CAMBIAR A URL DE PRODUCCION
+    window.parent === window ? window.location.origin : "https://embedbookapp.com";
   const preReserva = {
     startStr,
     endStr,
@@ -327,12 +327,12 @@ async function handleSlotSelection(info, config, calendar, toLocalISOString) {
     }
 
     // --- AJUSTE AUTOMÁTICO (Snap) con Arreglo de Rendering ---
-    const diff = Math.abs(info.end.getTime() - endMs);
+/*     const diff = Math.abs(info.end.getTime() - endMs);
     if (diff > 1000) {
       calendar.unselect();
       setTimeout(() => calendar.select(start, end), 10);
       return;
-    }
+    } */
 
     // --- FLUJO DE RESERVA (COMUNICACIÓN EXTERNA) ---
 
