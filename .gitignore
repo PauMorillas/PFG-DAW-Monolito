@@ -34,3 +34,4 @@ build/
 .env
 MIRARANTESDEPRESENTAR.txt
 **/application.properties
+docker-compose.local.backup
