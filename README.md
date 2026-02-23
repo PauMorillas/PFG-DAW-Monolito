@@ -1,4 +1,4 @@
-# 🚀 PFG: Sistema Integral de Gestión de Eventos
+# 🚀 PFG: Sistema Integral de Gestión de Eventos para PYMES y particulares
 
 Este repositorio contiene el **Core** del sistema (Monolito Java + Microservicio de Seguridad). El proyecto utiliza una arquitectura híbrida que combina renderizado en servidor (SSR) para usuarios finales y una arquitectura de microservicios para la gestión de seguridad.
 
