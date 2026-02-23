@@ -8,10 +8,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -32,12 +36,10 @@ import lombok.extern.slf4j.Slf4j;
  * transformamos en una List<String> limpiando espacios en blanco.
  */
 @Service
+@EnableCaching
 @Slf4j
 public class DominioServiceImpl implements DominioService {
-
-    public DominioServiceImpl(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    private static final String CACHE_NAME = "allowedDomains";
 
     @Value("${api.domain.url}")
     private String apiUrl;
@@ -46,15 +48,22 @@ public class DominioServiceImpl implements DominioService {
     private String defaultDomains;
 
     private final RestTemplate restTemplate;
+    private final MyCacheManager cacheManager;
 
     @Autowired
     private CustomDominioRepository dominioRepository;
+
+    public DominioServiceImpl(RestTemplate restTemplate, MyCacheManager cacheManager) {
+        this.restTemplate = restTemplate;
+        this.cacheManager = cacheManager;
+    }
 
     /**
      * Llama al endpoint /allowed-domains que devuelve un texto plano con dominios
      * separados por espacios. Convierte ese String en una lista y aplica un
      * fallback en caso de error o respuesta vacía.
      */
+    @Cacheable(value = CACHE_NAME)
     @Override
     public List<String> findAll() {
         String endpoint = apiUrl + "/allowed-domains";
@@ -63,17 +72,8 @@ public class DominioServiceImpl implements DominioService {
             // Pedimos el body como String (text/plain)
             String body = restTemplate.getForObject(endpoint, String.class);
 
-            if (body == null || body.trim().isEmpty()) {
-                log.warn("La respuesta llegó vacía - usando fallback a los dominios por defecto", endpoint);
-                return parseDomains(defaultDomains);
-            }
-
-            // Split por cualquier whitespace (espacios, tabs, nuevas líneas), trim y
-            // filtrar vacíos
-            List<String> allowedDomains = Arrays.stream(body.split("\\s+"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
+            // Usamos parseDomains para manejar null, vacío y limpieza de espacios
+            List<String> allowedDomains = parseDomains(body);
 
             if (allowedDomains.isEmpty()) {
                 log.warn(
@@ -85,8 +85,6 @@ public class DominioServiceImpl implements DominioService {
             return allowedDomains;
 
         } catch (RestClientException e) {
-            // Manejo sencillo: log y fallback a las URLs por defecto definidas en
-            // application.properties
             log.error("Error al obtener los dominios permitidos desde {}: ", endpoint, e);
             return parseDomains(defaultDomains);
         }
@@ -94,19 +92,21 @@ public class DominioServiceImpl implements DominioService {
 
     /**
      * Parsea una cadena de dominios separados por espacios en una lista.
-     * Si la cadena es null o vacía devuelve un fallback a http://localhost:4200.
+     * Si la cadena es null o vacía devuelve un fallback a
+     * https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/.
      */
     private List<String> parseDomains(String domainsPlain) {
         System.out.println("domainsPlain: " + domainsPlain);
+        log.info("Dominios planos en parseDomains", domainsPlain);
         if (domainsPlain == null || domainsPlain.trim().isEmpty()) {
-            return Arrays.asList("http://localhost:4200");
+            return Arrays.asList("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/");
         }
         List<String> parsed = Arrays.stream(domainsPlain.split("\\s+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
         if (parsed.isEmpty()) {
-            return Arrays.asList("http://localhost:4200");
+            return Arrays.asList("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/");
         }
         return parsed;
     }
@@ -115,6 +115,7 @@ public class DominioServiceImpl implements DominioService {
     // Escritura / sincronización de dominios (POST /save-domain)
     // =========================================================
     private void guardarDominioEnLaravel(Dominio dominio) {
+        this.cacheManager.invalidateAllowedDomainsCache();
         String endpoint = apiUrl + "/save-domain";
 
         Map<String, Object> payload = parseJsonToAllowedDomains(dominio);
@@ -134,11 +135,23 @@ public class DominioServiceImpl implements DominioService {
         try {
             restTemplate.postForEntity(endpoint, request, String.class);
             log.info("Dominio sincronizado correctamente en Laravel: {}", dominio.getDominio());
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
+                // Mensaje propio en español
+                throw new DominioSyncException(
+                        "El dominio '" + dominio.getDominio() + "' ya está registrado",
+                        dominio.getDominio());
+            } else {
+                e.printStackTrace();
+                throw new DominioSyncException(
+                        "No se pudo sincronizar el dominio con la API, contacte con soporte si sigue ocurriendo el error",
+                        dominio.getDominio());
+            }
         } catch (RestClientException e) {
-            log.error("Error sincronizando dominio con Laravel: {}", dominio.getDominio(), e);
-
+            e.printStackTrace();
+            // Error de conexión, timeout, etc
             throw new DominioSyncException(
-                    "No se pudo sincronizar el dominio con la API, contacte. con soporte si sigue ocurriendo el error",
+                    "No se pudo sincronizar el dominio con la API, contacte con soporte si sigue ocurriendo el error",
                     dominio.getDominio());
         }
     }
@@ -165,6 +178,7 @@ public class DominioServiceImpl implements DominioService {
 
     @Override
     public void updateAll(List<DominioDTO> nuevosDTO, Negocio negocio) {
+
         List<Dominio> actuales = negocio.getListaDominios();
 
         // Identificar NUEVOS DOMINIOS (que antes no estaban)
@@ -177,17 +191,26 @@ public class DominioServiceImpl implements DominioService {
                 .filter(d -> nuevosDTO.stream().noneMatch(dto -> dto.getDominio().equals(d.getDominio())))
                 .toList();
 
-        // 1) Borrar de BD 
-        dominioRepository.deleteAll(borrados);
+        // 1) Borrar de BD
+        // TODO: Borrar también en Laravel (falta endpoint)
+        if (!borrados.isEmpty()) {
+            dominioRepository.deleteAll(borrados);
+            // También quitarlos de la colección en memoria
+            negocio.getListaDominios().removeAll(borrados);
+        }
 
         // 2) Insertar nuevos (y enviarlos a Laravel)
         for (DominioDTO dto : nuevos) {
             Dominio dominio = DominioDTO.convertToEntity(dto, negocio);
             guardarDominioEnLaravel(dominio);
             dominioRepository.save(dominio);
+
+            // Añadir a la colección del negocio
+            negocio.getListaDominios().add(dominio);
         }
     }
 
+    // ======= HELPERS =======
     private Map<String, Object> parseJsonToAllowedDomains(Dominio dominio) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("dominio", dominio.getDominio());

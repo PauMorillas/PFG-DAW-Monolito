@@ -2,7 +2,7 @@
 // 1. CONFIGURACIÓN GLOBAL
 // ===========================================================
 
-const ANGULAR_ORIGIN = "http://localhost:4200"; // TODO: cambiar a producción cuando se despliegue
+const ANGULAR_ORIGIN = "https://paumorillas.github.io/PFG-DAW-ANGULARFRONT"; // TODO: cambiar a producción cuando se despliegue
 
 // ===========================================================
 // 2. FUNCIONES HELPERS (Para el manejo de Fechas)
@@ -186,7 +186,7 @@ function disablePastDays(info) {
  */
 function getClientDataFromForm(startStr, endStr, duracionMinutos, idServicio) {
   const PARENT_ORIGIN =
-    window.parent === window ? window.location.origin : "http://localhost:8081"; // TODO: CAMBIAR A URL DE PRODUCCION
+    window.parent === window ? window.location.origin : "https://embedbookapp.com";
   const preReserva = {
     startStr,
     endStr,
@@ -327,12 +327,12 @@ async function handleSlotSelection(info, config, calendar, toLocalISOString) {
     }
 
     // --- AJUSTE AUTOMÁTICO (Snap) con Arreglo de Rendering ---
-    const diff = Math.abs(info.end.getTime() - endMs);
+/*     const diff = Math.abs(info.end.getTime() - endMs);
     if (diff > 1000) {
       calendar.unselect();
       setTimeout(() => calendar.select(start, end), 10);
       return;
-    }
+    } */
 
     // --- FLUJO DE RESERVA (COMUNICACIÓN EXTERNA) ---
 
@@ -435,7 +435,7 @@ function createCalendar(calendarEl, config) {
     selectable: true,
     selectMirror: true,
     expandRows: true,
-    
+
     // --- HORARIOS Y VISTA ---
     slotMinTime: horaApertura,
     slotMaxTime: horaCierre,
@@ -480,7 +480,7 @@ function createCalendar(calendarEl, config) {
       return true;
     },
     
-    // --- MANEJADOR DE EVENTO PRINCIPAL ---
+    // --- MANEJADOR DE EVENTO PRINCIPAL EN ORDENADORES ---
     select: (info) => {
       // Llama al manejador de flujo, delegando toda la lógica
       handleSlotSelection(info, config, calendar, toLocalISOString);

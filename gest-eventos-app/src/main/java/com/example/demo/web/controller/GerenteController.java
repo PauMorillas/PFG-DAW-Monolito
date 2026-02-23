@@ -36,7 +36,7 @@ public class GerenteController {
 	// informacion del formulario
 	@GetMapping("/register")
 	public void register(HttpServletResponse response) throws IOException {
-		response.sendRedirect("http://localhost:4200/registro-gerente");
+		response.sendRedirect("https://paumorillas.github.io/PFG-DAW-ANGULARFRONT/registro-gerente");
 	}
 
 	// TODO: Hacerlo REST

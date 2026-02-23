@@ -1,7 +1,9 @@
 services:
 # Servicio de base de datos MySQL
   mysql_db:
-    image: mysql:8.0
+    build:
+      context: ./db_init
+      dockerfile: Dockerfile-mysql
     container_name: pfg_mysql_db
     restart: always
 
@@ -17,14 +19,22 @@ services:
       retries: 5
     ports:
     # Mapea el puerto del host al puerto del contenedor 
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       # Persistencia de datos (Usa el volumen 'db_data')
       - db_data:/var/lib/mysql
       # Inicialización de la BD (Mapea la carpeta local a la ruta de scripts de MySQL)
       - ./db_init:/docker-entrypoint-initdb.d
-      # Configuración de MySQL
-      - ./db_init/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pfg_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    env_file:
+      - ./.env
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
 
   # ---------------------------------------------------------------------------------------- 
   # API de Dominios Permitidos (Frontend/API)
@@ -66,8 +76,9 @@ services:
         - MAIL_USERNAME=${MAIL_USERNAME}
         - MAIL_PASSWORD=${MAIL_PASSWORD}
         - API_DOMAIN_URL=${API_DOMAIN_URL}
+        - API_ANGULAR_URL=${API_ANGULAR_URL}
         - API_SECRET=${API_SECRET}
         - API_DEFAULT_DOMAINS="http://localhost:8000/api http://localhost:8080"
-
+  
 volumes:
   db_data: # Solo se nombra el volumen que necesita ser persistente

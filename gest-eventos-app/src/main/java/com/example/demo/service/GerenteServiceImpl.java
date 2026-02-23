@@ -22,9 +22,11 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class GerenteServiceImpl implements GerenteService {
 	// RegEx para validar teléfono español (9 dígitos, empieza por 6 o 7)
-	private static final Pattern PHONE_PATTERN = Pattern.compile("^[67]\\d{8}$");
+	private static final Pattern PHONE_PATTERN = 
+	Pattern.compile("^[67]\\d{8}$");
 
-	private static final Pattern PASS_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\\\d)[A-Za-z\\\\d]{8,}$");
+	private static final Pattern PASS_PATTERN = 
+    Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$");
 
 	@Autowired
 	private GerenteRepository gerenteRepository;

@@ -2,6 +2,8 @@ package com.example.demo.service;
 
 import java.util.Optional;
 
+import javax.print.DocFlavor.STRING;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class ClienteServiceImpl implements ClienteService {
 	private ClienteRepository clienteRepository;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	private final String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
 	/**
 	 * Busca un cliente existente por email. Si no existe, lo crea y lo guarda. Se
@@ -112,7 +116,7 @@ public class ClienteServiceImpl implements ClienteService {
 		}
 
 		// 3. Validación de formato de correo electrónico
-		if (!isEmptyOrNull(clienteDTO.getEmail()) && !clienteDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+		if (!isEmptyOrNull(clienteDTO.getEmail()) && !clienteDTO.getEmail().matches(emailRegex)) {
 			errores.append("El formato del correo electrónico no es válido. ");
 		}
 

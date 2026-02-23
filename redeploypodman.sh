@@ -19,7 +19,7 @@ echo "--- 🧹 Deteniendo y eliminando contenedores, redes y volumen de la BD --
 cd ..
 
 # Usa podman-compose o podman compose directamente
-podman compose down -v --remove-orphans || echo "⚠️ No había contenedores corriendo o error al detenerlos."
+podman compose down || echo "⚠️ No había contenedores corriendo o error al detenerlos."
 
 echo "✅ Limpieza de Podman completa."
 

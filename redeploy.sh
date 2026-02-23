@@ -25,7 +25,7 @@ cd ..
 
 # El comando 'down -v' es la clave para eliminar el volumen de datos persistentes.
 # La opción '--remove-orphans' previene conflictos con recursos no gestionados.
-docker compose down -v --remove-orphans
+docker compose down
 
 # Nota: El comando anterior no fallará incluso si los contenedores no estaban corriendo.
 echo "✅ Limpieza de Docker completa."
