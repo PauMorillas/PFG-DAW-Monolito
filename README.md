@@ -9,7 +9,9 @@ El ecosistema completo se divide en dos grandes bloques:
 1.  **Core (Este repositorio):** Backend Java + Spring Boot, Vistas Thymeleaf para el iFrame de los clientes y una API en Laravel para la gestión de los dominios permitidos por el servidor.
 2.  **Panel de Administración:** Frontend SPA desarrollado en **Angular 21**. 
     * 🔗 [Repositorio del Front de Gerentes](https://github.com/PauMorillas/PFG-DAW-ANGULARFRONT)
-
+3.  **Migración a Laravel:** Evolución técnica del backend hacia **PHP + Laravel 11**. En este repositorio se aplica **Ingeniería de Software** de alto nivel para la reescritura del sistema.
+    * 🔗 [Repositorio de la Migración a Laravel](https://github.com/PauMorillas/Migration-PFG-DAW-ToLaravel)
+   
 ### **Tecnologías del Core**
 * **Java Spring Boot 3.x:** Motor principal de la lógica de negocio.
 * **Spring Security:** Control de acceso robusto y filtrado de peticiones mediante `ApiTokenFilter`.
